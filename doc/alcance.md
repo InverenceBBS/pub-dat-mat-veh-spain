@@ -62,6 +62,35 @@ Esto es lo importante de las tres. **El registro no trae la medida del neumátic
 - `MASA_MAXIMA_TECNICA_ADMISIBLE_ITV` y `MASA_ORDEN_MARCHA_ITV`, `TARA` y `PESO_MAX`: la carga por eje acota el índice de carga.
 - `DISTANCIA_EJES_12_ITV`, `VIA_ANTERIOR_ITV` y `VIA_POSTERIOR_ITV`, en milímetros: geometría del vehículo.
 - `KW_ITV` y `POTENCIA_ITV`: acotan el índice de velocidad.
-- Y sobre todo el **TVV** —`TIPO_ITV`, `VARIANTE_ITV`, `VERSION_ITV`— junto con `CONTRASENA_HOMOLOGACION_ITV`, que es la clave de la homologación europea del vehículo. Es el identificador por el que una ficha técnica completa **se podría** cruzar con un catálogo de equipamiento original.
 
-O sea que la medida del neumático **no sale de esta fuente**: sale de cruzar el TVV con otro catálogo que haya que conseguir aparte. Conviene saberlo antes de prometer nada, y conviene medir cuánta cobertura tiene el TVV en el histórico, porque son campos que la DGT fue añadiendo y en los primeros años pueden venir vacíos.
+La medida del neumático hay que traerla, entonces, de otro catálogo, cruzando por lo que sí identifica la homologación del vehículo. Y ahí lo que hay medido cambia cuál es la clave de cruce.
+
+#### La clave de cruce es la contraseña de homologación, no el TVV
+
+Contado sobre los 10.486 registros de `export_mat_20260828.txt`:
+
+| Campo | Registros con valor |
+|---|---:|
+| `CONTRASENA_HOMOLOGACION_ITV` | 10.348 (**98,7%**) |
+| `CATEGORIA_HOMOLOGACION_EUROPEA_ITV` | 10.382 (99,0%) |
+| `VARIANTE_ITV` | 10.381 (99,0%) |
+| `VERSION_ITV` | 10.379 (99,0%) |
+| `TIPO_ITV` | **0 (0,0%)** |
+| `CODIGO_ITV` | 9 (0,1%) |
+
+O sea que **el TVV está cojo**: llegan la variante y la versión, pero el tipo viene vacío en todos los registros de ese día, y `CODIGO_ITV` es prácticamente inexistente. Lo que sí llega, y casi siempre, es la **contraseña de homologación**, bien formada y con el formato europeo estándar: `E1*2018/858*00302*10`, `E9*2007/46*0355*26`. Ésa es la clave por la que hay que intentar el cruce.
+
+(La medición es de un solo día. Antes de construir nada encima hay que repetirla sobre todo el histórico, porque son campos que la DGT fue añadiendo y en los primeros años pueden venir vacíos.)
+
+#### Dónde puede estar el catálogo
+
+Cuatro vías, exploradas el 2026-08-31:
+
+1. **Fichas Técnicas Reducidas del Ministerio de Industria (GIAVEH)** — es la vía pública más prometedora. El buscador de [consulta de fichas reducidas](https://industria.serviciosmin.gob.es/FichasReducidasv2/UI/Solicitudes/Extranet/ConsultaFichasReducidas) **responde sin certificado digital** y busca precisamente por **contraseña de homologación**, además de por fabricante, marca y tipo de ficha. La ficha técnica reducida es el documento que recoge las características técnicas asociadas a una contraseña de homologación, neumáticos incluidos, y la base la comparte el Ministerio con las estaciones de ITV. Lo que falta por comprobar: qué devuelve exactamente cada consulta, si el resultado es un PDF o datos, y **qué cobertura tiene** —el registro contiene las fichas reducidas tramitadas, que no tienen por qué ser todas las homologaciones en circulación—. Y es consulta unitaria: no hay descarga masiva publicada.
+2. **La ficha técnica del vehículo (eITV)**, que sí lleva las medidas de neumático homologadas. Es por vehículo y requiere identificarse como titular, así que no sirve para construir un catálogo.
+3. **Los datos abiertos de la RDW neerlandesa**, que publica en abierto el registro de homologaciones europeas. **Descartada, comprobada**: sus trece datasets de *Typegoedkeuring* no traen medida de neumático. El de ejes por versión (`TGK As Uitvoering`) llega hasta el ancho de vía y la carga máxima por eje, y el único dataset con «banden» en el nombre es el de vehículos de **oruga**.
+4. **Catálogos comerciales** de equipamiento original y sustitución —TecDoc/TecAlliance y equivalentes—, que es lo que usa el sector del recambio. Es la vía que resuelve el problema de verdad, y la que casi con seguridad ya está contratada en NEX.
+
+#### Y «lo que puede usar legalmente» no es una lista cerrada
+
+Aunque se consiga el catálogo, conviene no confundir dos cosas: la ficha del vehículo recoge **las medidas con las que se homologó**, pero la normativa admite montar otras equivalentes bajo condiciones de diámetro exterior, índice de carga y código de velocidad. El propio GIAVEH tiene un módulo de **Equivalencias** como trámite específico. Para el negocio esto importa en la dirección incómoda: **el conjunto de medidas legalmente montables sobre un vehículo es mayor que el que aparece en su ficha**, así que un agregado construido sólo con la medida de homologación subestima la variedad real de la demanda.
