@@ -1,0 +1,20 @@
+# Los datos no se versionan: se descargan de la DGT y pesan gigas
+/data/
+*.zip
+*.gz
+export_mat_*.txt
+export_mensual_mat_*.txt
+
+# Secretos
+.env
+credentials
+.credentials*
+*.pem
+*.key
+
+# Ruido
+*.log
+__pycache__/
+.Rhistory
+.Rproj.user/
+.venv/

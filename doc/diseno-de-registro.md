@@ -1,0 +1,117 @@
+<!--
+Documento abierto el 2026-08-31. Transcribe la Tabla 1 del PDF oficial de la DGT (MATRICULACIONES_MATRABA.pdf, págs. 3-7) y le añade las posiciones de inicio y fin, que el PDF no da: se calculan acumulando las longitudes declaradas.
+La tabla del cuerpo se genera a partir de record-layout.tsv; si hay que corregir algo, corregir el TSV y regenerar, no editar la tabla a mano.
+Las tablas de códigos del Anexo I van aparte, en tablas-de-codigos.md, porque son largas y se consumen de otra manera (acaban siendo catálogos en la base de datos).
+-->
+
+# Diseño de registro
+
+El fichero es **texto de ancho fijo, 714 bytes por línea**, con **69 campos**, todos declarados `CHAR(n)` por la DGT: no hay separadores, ni comillas, ni cabecera de columnas. La fuente oficial es el [Documento de interfaz de Envío de Datos (Matriculaciones)](https://www.dgt.es/export/sites/web-DGT/.galleries/downloads/dgt-en-cifras/matraba/MATRICULACIONES_MATRABA.pdf), Tabla 1, páginas 3 a 7.
+
+Las columnas `inicio` y `fin` **no están en el documento de la DGT**: se obtienen acumulando las longitudes declaradas, y son las que hace falta para trocear la línea. La comprobación de que el cálculo es correcto está [al final](#comprobaci%C3%B3n-del-troceado).
+
+La misma tabla, en formato manejable por un programa, está en [record-layout.tsv](record-layout.tsv).
+
+| # | Campo | Long. | Inicio | Fin | Tipo | Formato | Descripción |
+|---:|---|---:|---:|---:|---|---|---|
+| 1 | `FEC_MATRICULA` | 8 | 1 | 8 | CHAR(8) | DATE, DDMMYYYY | Fecha de matriculación del vehículo |
+| 2 | `COD_CLASE_MAT` | 1 | 9 | 9 | CHAR(1) | Ver anexo I | Código de clase de matrícula |
+| 3 | `FEC_TRAMITACION` | 8 | 10 | 17 | CHAR(8) | DATE, DDMMYYYY | Fecha de tramitación, que se corresponde con la fecha de transferencia del vehículo contenida en los datos de transferencias |
+| 4 | `MARCA_ITV` | 30 | 18 | 47 | CHAR(30) |  | Descripción de la marca del vehículo |
+| 5 | `MODELO_ITV` | 22 | 48 | 69 | CHAR(22) |  | Modelo del vehículo |
+| 6 | `COD_PROCEDENCIA_ITV` | 1 | 70 | 70 | CHAR(1) | Ver anexo I | Código de la procedencia del vehículo |
+| 7 | `BASTIDOR_ITV` | 21 | 71 | 91 | CHAR(21) |  | Ocho primeros caracteres del bastidor del vehículo. El resto se completa con * |
+| 8 | `COD_TIPO` | 2 | 92 | 93 | CHAR(2) | Ver anexo I | Código del tipo de vehículo |
+| 9 | `COD_PROPULSION_ITV` | 1 | 94 | 94 | CHAR(1) | Ver anexo I | Código del tipo de propulsión |
+| 10 | `CILINDRADA_ITV` | 5 | 95 | 99 | CHAR(5) | DECIMAL(5,0), ZZZZ9 | Cilindrada del vehículo |
+| 11 | `POTENCIA_ITV` | 6 | 100 | 105 | CHAR(6) | DECIMAL(5,2), ZZ9.99 | Potencia fiscal del vehículo en CVF, redondeada a la segunda cifra decimal |
+| 12 | `TARA` | 6 | 106 | 111 | CHAR(6) | DECIMAL(7,0), ZZZZZ9 | Tara del vehículo (peso del vehículo). La carga útil será PESO_MAX - TARA |
+| 13 | `PESO_MAX` | 6 | 112 | 117 | CHAR(6) | DECIMAL(7,0), ZZZZZ9 | Peso máximo del vehículo |
+| 14 | `NUM_PLAZAS` | 3 | 118 | 120 | CHAR(3) | INTEGER, ZZ9 | Número de plazas. En un vehículo de carga, plazas máximas permitidas con el vehículo descargado |
+| 15 | `IND_PRECINTO` | 2 | 121 | 122 | CHAR(2) | SI / blanco | Indicador de vehículo precintado |
+| 16 | `IND_EMBARGO` | 2 | 123 | 124 | CHAR(2) | SI / blanco | Indicador de vehículo embargado |
+| 17 | `NUM_TRANSMISIONES` | 2 | 125 | 126 | CHAR(2) | INTEGER, 99 | Número de transmisiones que ha tenido el vehículo |
+| 18 | `NUM_TITULARES` | 2 | 127 | 128 | CHAR(2) | INTEGER, 99 | Número de titulares del vehículo |
+| 19 | `LOCALIDAD_VEHICULO` | 24 | 129 | 152 | CHAR(24) |  | Localidad del domicilio del vehículo |
+| 20 | `COD_PROVINCIA_VEH` | 2 | 153 | 154 | CHAR(2) | Ver anexo I | Código de la provincia donde está domiciliado el vehículo |
+| 21 | `COD_PROVINCIA_MAT` | 2 | 155 | 156 | CHAR(2) | Ver anexo I | Código de la provincia donde fue matriculado el vehículo |
+| 22 | `CLAVE_TRAMITE` | 1 | 157 | 157 | CHAR(1) | Ver anexo I | Código del trámite |
+| 23 | `FEC_TRAMITE` | 8 | 158 | 165 | CHAR(8) | DATE, DDMMYYYY | Fecha en la que se realizó el trámite |
+| 24 | `CODIGO_POSTAL` | 5 | 166 | 170 | CHAR(5) | INTEGER, 99999 | Código postal donde está domiciliado el vehículo |
+| 25 | `FEC_PRIM_MATRICULACION` | 8 | 171 | 178 | CHAR(8) | DATE, DDMMYYYY | Fecha de la primera matriculación del vehículo |
+| 26 | `IND_NUEVO_USADO` | 1 | 179 | 179 | CHAR(1) | N / U | Nuevo (N) o usado (U) al momento de la matriculación. Se calcula en el almacén de datos |
+| 27 | `PERSONA_FISICA_JURIDICA` | 1 | 180 | 180 | CHAR(1) | D / X | Titular persona física (D) o jurídica (X) |
+| 28 | `CODIGO_ITV` | 9 | 181 | 189 | CHAR(9) |  | Código ITV |
+| 29 | `SERVICIO` | 3 | 190 | 192 | CHAR(3) | Ver anexo I | Código de servicio del vehículo (nueva versión del campo) |
+| 30 | `COD_MUNICIPIO_INE_VEH` | 5 | 193 | 197 | CHAR(5) | INTEGER, 99999 | Código INE del municipio del domicilio del vehículo |
+| 31 | `MUNICIPIO` | 30 | 198 | 227 | CHAR(30) |  | Nombre del municipio donde está domiciliado el vehículo |
+| 32 | `KW_ITV` | 7 | 228 | 234 | CHAR(7) | DECIMAL(8,2), ZZZ9.99 | Potencia neta máxima en kW. Si es nulo el valor será ******* |
+| 33 | `NUM_PLAZAS_MAX` | 3 | 235 | 237 | CHAR(3) | INTEGER, ZZ9 | Número de plazas máximo. En un vehículo de carga, plazas máximas con el vehículo cargado |
+| 34 | `CO2_ITV` | 5 | 238 | 242 | CHAR(5) | SMALLINT, ZZZZZ | Emisiones CO2 |
+| 35 | `RENTING` | 1 | 243 | 243 | CHAR(1) | S / N o blanco | Indica si es vehículo de renting |
+| 36 | `COD_TUTELA` | 1 | 244 | 244 | CHAR(1) | N / S / blanco | Titular menor de edad o con tutela judicial |
+| 37 | `COD_POSESION` | 1 | 245 | 245 | CHAR(1) | V / S / blanco | Tipo de posesión: venta (V), subasta (S). Posesión por alguien distinto al titular |
+| 38 | `IND_BAJA_DEF` | 1 | 246 | 246 | CHAR(1) | Ver anexo I | Indicador de baja definitiva del vehículo |
+| 39 | `IND_BAJA_TEMP` | 1 | 247 | 247 | CHAR(1) | S / N o blanco | Indicador de baja temporal del vehículo |
+| 40 | `IND_SUSTRACCION` | 1 | 248 | 248 | CHAR(1) | S / N o blanco | Indicador de vehículo robado |
+| 41 | `BAJA_TELEMATICA` | 11 | 249 | 259 | CHAR(11) | En desguace / blanco | Si es una baja telemática su valor será En desguace |
+| 42 | `TIPO_ITV` | 25 | 260 | 284 | CHAR(25) |  | Tipo del vehículo |
+| 43 | `VARIANTE_ITV` | 25 | 285 | 309 | CHAR(25) |  | Variante del vehículo |
+| 44 | `VERSION_ITV` | 35 | 310 | 344 | CHAR(35) |  | Versión del vehículo |
+| 45 | `FABRICANTE_ITV` | 70 | 345 | 414 | CHAR(70) |  | Fabricante del vehículo completo o completado |
+| 46 | `MASA_ORDEN_MARCHA_ITV` | 6 | 415 | 420 | CHAR(6) |  | Masa en orden de marcha |
+| 47 | `MASA_MAXIMA_TECNICA_ADMISIBLE_ITV` | 6 | 421 | 426 | CHAR(6) |  | Masa máxima técnicamente admisible |
+| 48 | `CATEGORIA_HOMOLOGACION_EUROPEA_ITV` | 4 | 427 | 430 | CHAR(4) |  | Categoría homologación UE |
+| 49 | `CARROCERIA` | 4 | 431 | 434 | CHAR(4) |  | Carrocería del vehículo |
+| 50 | `PLAZAS_PIE` | 3 | 435 | 437 | CHAR(3) | FORMAT zz9 | Número de plazas de pie |
+| 51 | `NIVEL_EMISIONES_EURO_ITV` | 8 | 438 | 445 | CHAR(8) |  | Nivel emisiones EURO |
+| 52 | `CONSUMO_WH_KM_ITV` | 4 | 446 | 449 | CHAR(4) | FORMAT zz9 | Consumo energía eléctrica |
+| 53 | `CLASIFICACION_REGLAMENTO_VEHICULOS_ITV` | 4 | 450 | 453 | CHAR(4) |  | Clasificación Anexo II RD 2822 |
+| 54 | `CATEGORIA_VEHICULO_ELECTRICO` | 4 | 454 | 457 | CHAR(4) | Ver anexo I | Categoría de vehículo eléctrico |
+| 55 | `AUTONOMIA_VEHICULO_ELECTRICO` | 6 | 458 | 463 | CHAR(6) |  | Autonomía del vehículo eléctrico |
+| 56 | `MARCA_VEHICULO_BASE` | 30 | 464 | 493 | CHAR(30) |  | Marca del vehículo base |
+| 57 | `FABRICANTE_VEHICULO_BASE` | 50 | 494 | 543 | CHAR(50) |  | Fabricante del vehículo base |
+| 58 | `TIPO_VEHICULO_BASE` | 35 | 544 | 578 | CHAR(35) |  | Tipo del vehículo base |
+| 59 | `VARIANTE_VEHICULO_BASE` | 25 | 579 | 603 | CHAR(25) |  | Variante del vehículo base |
+| 60 | `VERSION_VEHICULO_BASE` | 35 | 604 | 638 | CHAR(35) |  | Versión del vehículo base |
+| 61 | `DISTANCIA_EJES_12_ITV` | 4 | 639 | 642 | CHAR(4) | FORMAT zz9 | Distancia entre ejes 1-2 |
+| 62 | `VIA_ANTERIOR_ITV` | 4 | 643 | 646 | CHAR(4) | mm | Vía anterior, en mm |
+| 63 | `VIA_POSTERIOR_ITV` | 4 | 647 | 650 | CHAR(4) | mm | Vía posterior, en mm |
+| 64 | `TIPO_ALIMENTACION_ITV` | 1 | 651 | 651 | CHAR(1) | M / B / F | Monocombustible (M), bicombustible (B), flexicombustible (F) |
+| 65 | `CONTRASENA_HOMOLOGACION_ITV` | 25 | 652 | 676 | CHAR(25) |  | Contraseña de homologación |
+| 66 | `ECO_INNOVACION_ITV` | 1 | 677 | 677 | CHAR(1) | S / N o blanco | A la espera de definir por UE, hasta entonces se deja en blanco |
+| 67 | `REDUCCION_ECO_ITV` | 4 | 678 | 681 | CHAR(4) |  | A la espera de definir por UE, hasta entonces se deja en blanco |
+| 68 | `CODIGO_ECO_ITV` | 25 | 682 | 706 | CHAR(25) |  | A la espera de definir por UE, hasta entonces se deja en blanco |
+| 69 | `FEC_PROCESO` | 8 | 707 | 714 | CHAR(8) | DATE, DDMMYYYY | Fecha en la que se grabó el proceso de la operación (matriculación, baja o transferencia) |
+
+## Comprobación del troceado
+
+Las 69 longitudes declaradas **suman exactamente 714**, que es la longitud de línea medida en un fichero real (`export_mat_20260828.txt`, todas las líneas de datos de 714 bytes; la primera línea del fichero diario es una cabecera de 79 bytes, ver [fuente.md](fuente.md#el-fichero)). Que cuadre al byte es la primera señal de que el diseño de registro está completo y en orden.
+
+La segunda es que los campos troceados con esas posiciones dan valores coherentes. Del primer registro de ese fichero:
+
+| Campo | Posiciones | Valor | Coherencia |
+|---|---|---|---|
+| `FEC_MATRICULA` | 1-8 | `28082026` | es el día del fichero |
+| `MARCA_ITV` | 18-47 | `VOLKSWAGEN` | |
+| `MODELO_ITV` | 48-69 | `TIGUAN` | |
+| `COD_PROCEDENCIA_ITV` | 70 | `3` | importación U.E., y el bastidor empieza por `WVG`, WMI de Volkswagen |
+| `BASTIDOR_ITV` | 71-91 | `WVGZZZCT3T***********` | |
+| `COD_TIPO` | 92-93 | `40` | TURISMO |
+| `COD_PROPULSION_ITV` | 94 | `0` | gasolina |
+| `CILINDRADA_ITV` | 95-99 | `1498` | 1.5 del Tiguan |
+| `COD_PROVINCIA_VEH` | 153-154 | `O` | Asturias, y la localidad es GIJÓN |
+| `MUNICIPIO` | 198-227 | `GIJON` | |
+| `FEC_PROCESO` | 707-714 | `28082026` | |
+
+Y del segundo: `COD_TIPO` = `20` (FURGONETA) con `COD_PROPULSION_ITV` = `1` (diésel) para un Renault Trafic de 1997 cm³, con bastidor `VF1...` (WMI de Renault). Los dos casos encajan campo a campo, así que el troceado es el bueno.
+
+Ojo con el detalle que despista al mirar el fichero en crudo: **el carácter que precede al bastidor es `COD_PROCEDENCIA_ITV`**, no la primera letra del VIN. A ojo, `3WVGZZZCT3T***********400` parece un bastidor de 25 caracteres; en realidad son procedencia (1) + bastidor (21) + tipo (2) + propulsión (1).
+
+## Lo que el diseño de registro no dice
+
+- **La codificación.** El PDF no la menciona. Medida sobre el fichero: **ISO-8859-1**, no UTF-8 (`GIJÓN` ocupa cinco bytes, con la `Ó` en un solo byte `D3`). Hay que declararla en la carga o los municipios con acento entran rotos.
+- **Los nombres de los campos llevan acentos y eñes en el PDF** (`CATEGORÍA_VEHÍCULO_ELÉCTRICO`, `CONTRASEÑA_HOMOLOGACION_ITV`). Aquí se transcriben sin ellos, que es como tendrán que llamarse las columnas.
+- **Nulos.** Casi todo campo puede venir a blancos. `KW_ITV` es el único que documenta un centinela propio: `*******` cuando es nulo.
+- **Redundancias del propio diseño.** Conviven `COD_SERVICIO` (código de servicio antiguo, en el Anexo I) y `SERVICIO` (la versión nueva, que es el campo 29), y conviven `NUM_PLAZAS` y `NUM_PLAZAS_MAX`, y `TARA`/`PESO_MAX` con `MASA_ORDEN_MARCHA_ITV`/`MASA_MAXIMA_TECNICA_ADMISIBLE_ITV`. No son erratas: son campos distintos con historia distinta.
+- **Tres campos declarados sin uso**: `ECO_INNOVACION_ITV`, `REDUCCION_ECO_ITV` y `CODIGO_ECO_ITV`, «a la espera de definir por UE, hasta entonces se deja en blanco».
