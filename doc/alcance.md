@@ -2,6 +2,7 @@
 Documento abierto el 2026-08-31, el mismo día que el repositorio, en cuanto Víctor cerró las cuatro decisiones que quedaban abiertas en fuente.md.
 Existe para que el alcance esté escrito antes que el código y no se vaya reinterpretando cada vez que alguien toca la ETL. Sus decisiones van citadas literalmente y marcadas como suyas; lo que viene detrás de cada una es análisis nuestro y puede estar equivocado.
 Las tensiones del final no son objeciones: son puntos donde lo pedido y lo que hace falta para conseguirlo no coinciden del todo, y donde alguien tendrá que decidir. Se dejan escritas porque si no se olvidan.
+La tensión 3 se reescribió el mismo día: nació como «hace falta un catálogo externo para llegar a la medida del neumático» y Víctor la rebajó a clases gruesas de tamaño, con el argumento de que el desgaste lo marcan los kilómetros y no el tiempo. Lo que se sabía de la medida exacta no se borró, se movió detrás y se marcó como no necesario hoy: si el mapeo fino vuelve al alcance, está ahí y no hay que volver a investigarlo.
 -->
 
 # Alcance
@@ -56,14 +57,59 @@ Se conservan y se modelan como dimensión. Si la intención era descartarlos tam
 
 ### 3. La ficha técnica no llega hasta el neumático
 
-Esto es lo importante de las tres. **El registro no trae la medida del neumático**, ni la llanta, ni el índice de carga o velocidad. Lo que trae y sirve para acercarse:
+Esto era lo importante de las tres mientras el objetivo fue la medida exacta. **Dejó de serlo el 2026-08-31**, cuando Víctor rebajó lo que hace falta:
+
+***NOTA VBR***: *En realidad sólo podemos aspirar a tener unos drivers bastante difusos porque el cambio de neumáticos no lo marca tanto el tiempo transcurrido sino los kilómetros recorridos, por lo que la función de transferencia será bastante difusa. Es muy probable que nos baste con que podamos diferenciar coches pequeños, medianos, grandes, todo-terrenos, furgonetas, camiones pequeños...*
+
+El razonamiento es de física del problema, no de disponibilidad de datos: **lo que agota un neumático son los kilómetros, no los meses**, y el kilometraje no está en ninguna fuente pública española. Aunque se conociera la medida exacta de cada vehículo matriculado, entre la matriculación y la reposición hay un retardo difuso de varios años, con una dispersión que ninguna medida de neumático reduce. Afinar el mapeo hasta la referencia sería precisión gastada sobre un retardo que no se conoce.
+
+Así que lo que hay que producir no es «qué neumático monta este coche», sino **cuántos vehículos de cada clase de tamaño entraron y salieron del parque de cada zona**. Y eso sí sale del fichero, sin catálogo externo ninguno.
+
+#### La segmentación por tamaño sale del propio registro
+
+Medido sobre `export_mat_20260828.txt`, la cobertura de los campos que la sostienen es prácticamente total:
+
+| Campo | Cobertura | Para qué sirve |
+|---|---:|---|
+| `TARA`, `MASA_ORDEN_MARCHA_ITV`, `MASA_MAXIMA_TECNICA_ADMISIBLE_ITV` | 100% | el mejor discriminante de tamaño |
+| `DISTANCIA_EJES_12_ITV` | 100% | batalla en mm; separa segmentos casi sola |
+| `VIA_ANTERIOR_ITV`, `VIA_POSTERIOR_ITV` | 100% | anchura de vía en mm; es geometría de rueda |
+| `KW_ITV`, `CILINDRADA_ITV` | 100% | potencia, que acota el índice de velocidad |
+| `COD_TIPO` | 99,2% | la clase gruesa, ya codificada |
+| `CATEGORIA_HOMOLOGACION_EUROPEA_ITV` | 99,0% | M1, N1, N2, N3, L… |
+| `CARROCERIA` | 91,4% | carrocería europea AA-AF |
+
+Los valores son reales y utilizables tal cual: `2677|1590|1583|1601` para un Tiguan (batalla, vía anterior, vía posterior en mm y masa en kg), `2300|1414|1408|1045` para un utilitario pequeño. Una motocicleta trae las vías a cero, que es lo correcto.
+
+Y buena parte de las clases que pide Víctor **ya vienen codificadas** en `COD_TIPO`. Reparto de ese día:
+
+| `COD_TIPO` | Clase | Registros |
+|---|---|---:|
+| 40 | Turismo | 7.724 |
+| 50 | Motocicleta de 2 ruedas | 1.112 |
+| 20 | Furgoneta | 644 |
+| 0G | Vehículo mixto adaptable | 247 |
+| 25 | Todo terreno | 124 |
+| 81 | Tractocamión | 104 |
+| 02 | Camión caja | 78 |
+| 90 | Ciclomotor de 2 ruedas | 49 |
+| 80 | Tractor | 44 |
+
+Furgonetas, camiones —con su desglose por carrozado y por articulado, que da el tamaño—, tractocamiones, autobuses, motos y ciclomotores salen directamente del código. Lo que **no** sale hecho son dos cosas:
+
+- **Pequeño, mediano y grande dentro del turismo.** No hay ningún campo que lo diga: hay que construirlo con umbrales sobre masa y batalla, o dejando que los datos formen los grupos. Es trabajo nuestro, pero es trabajo sobre campos con cobertura del 100%.
+- **El todoterreno o SUV.** Ojo con esto, que es contraintuitivo: `COD_TIPO` = 25 sólo recogió **124 vehículos** ese día frente a 7.724 turismos, cuando el SUV es hoy más de la mitad del mercado. **Los SUV se matriculan como turismo**, y la carrocería europea tampoco los distingue —entre los turismos de ese día: 3.265 `AB` (dos volúmenes), 2.294 `AC` (familiar), 1.672 `AF` (multiuso), 401 `AA` (berlina)—, porque «SUV» no es una categoría de homologación. Justo la clase que Víctor nombra por su nombre es la única que hay que **derivar** con un clasificador, y la altura libre al suelo, que sería el discriminante natural, no viene en el registro.
+
+#### Y lo de la medida exacta, por si vuelve a hacer falta
+
+Lo que sigue queda documentado por si el mapeo fino vuelve al alcance; **hoy no hace falta para producir los agregados**.
+
+Lo que el registro trae y sirve para acercarse a la medida:
 
 - `CATEGORIA_HOMOLOGACION_EUROPEA_ITV` (M1, N1, L3e…), `CARROCERIA`, `CLASIFICACION_REGLAMENTO_VEHICULOS_ITV`.
 - `MASA_MAXIMA_TECNICA_ADMISIBLE_ITV` y `MASA_ORDEN_MARCHA_ITV`, `TARA` y `PESO_MAX`: la carga por eje acota el índice de carga.
 - `DISTANCIA_EJES_12_ITV`, `VIA_ANTERIOR_ITV` y `VIA_POSTERIOR_ITV`, en milímetros: geometría del vehículo.
 - `KW_ITV` y `POTENCIA_ITV`: acotan el índice de velocidad.
-
-La medida del neumático hay que traerla, entonces, de otro catálogo, cruzando por lo que sí identifica la homologación del vehículo. Y ahí lo que hay medido cambia cuál es la clave de cruce.
 
 #### La clave de cruce es la contraseña de homologación, no el TVV
 
