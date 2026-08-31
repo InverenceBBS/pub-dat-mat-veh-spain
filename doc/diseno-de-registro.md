@@ -8,6 +8,8 @@ Las tablas de códigos del Anexo I van aparte, en tablas-de-codigos.md, porque s
 
 El fichero es **texto de ancho fijo, 714 bytes por línea**, con **69 campos**, todos declarados `CHAR(n)` por la DGT: no hay separadores, ni comillas, ni cabecera de columnas. La fuente oficial es el [Documento de interfaz de Envío de Datos (Matriculaciones)](https://www.dgt.es/export/sites/web-DGT/.galleries/downloads/dgt-en-cifras/matraba/MATRICULACIONES_MATRABA.pdf), Tabla 1, páginas 3 a 7.
 
+**Este mismo diseño de registro vale para el fichero de bajas.** Comparados los dos documentos oficiales campo a campo, el [de bajas](https://www.dgt.es/export/sites/web-DGT/.galleries/downloads/dgt-en-cifras/matraba/BAJAS_MATRABA.pdf) declara los mismos 69 campos, en el mismo orden y con las mismas longitudes; la única diferencia es que su campo 14 se llama `NUM_PLAZAS_ITV` en vez de `NUM_PLAZAS`, con idéntica descripción. Comprobado además contra un fichero real de bajas: 714 bytes por línea, y el troceado da valores coherentes.
+
 Las columnas `inicio` y `fin` **no están en el documento de la DGT**: se obtienen acumulando las longitudes declaradas, y son las que hace falta para trocear la línea. La comprobación de que el cálculo es correcto está [al final](#comprobaci%C3%B3n-del-troceado).
 
 La misma tabla, en formato manejable por un programa, está en [record-layout.tsv](record-layout.tsv).

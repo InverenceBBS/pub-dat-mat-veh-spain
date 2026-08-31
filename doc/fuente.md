@@ -2,7 +2,7 @@
 Documento abierto el 2026-08-31, en la primera pasada del repositorio, antes de escribir una línea de código.
 Su objetivo es que cualquiera que llegue al repositorio sepa qué se descarga, de dónde, cuánto pesa y qué limitaciones tiene, sin repetir el reconocimiento.
 Todas las cifras de tamaños están medidas ese día contra el servidor de la DGT y van fechadas en el cuerpo, porque envejecen solas: el histórico crece un mes cada mes.
-Lo que queda por decidir está al final a propósito: son decisiones de alcance, no hallazgos.
+El alcance se decidió el mismo día y vive aparte, en alcance.md: aquí queda sólo lo que se ha medido de la fuente.
 -->
 
 # La fuente: microdatos de matriculaciones de la DGT
@@ -11,12 +11,15 @@ La [Dirección General de Tráfico](https://www.dgt.es/menusecundario/dgt-en-cif
 
 ## Qué hay publicado
 
-El mismo contenido, con idéntico [diseño de registro](diseno-de-registro.md), en dos series:
+El mismo contenido, con idéntico [diseño de registro](diseno-de-registro.md), en dos series con idéntica raíz URL 
+```
+ROOT=https://www.dgt.es/microdatos/salida/YYYY/M/vehiculos/matriculaciones
+```
 
 | Serie | Patrón de URL | Página de listado | Cobertura |
 |---|---|---|---|
-| Diaria | `https://www.dgt.es/microdatos/salida/YYYY/M/vehiculos/matriculaciones/export_mat_YYYYMMDD.zip` | [matriculaciones-automoviles-diario](https://www.dgt.es/menusecundario/dgt-en-cifras/matraba-listados/matriculaciones-automoviles-diario.html) | sólo los últimos ~20 días |
-| Mensual | `https://www.dgt.es/microdatos/salida/YYYY/M/vehiculos/matriculaciones/export_mensual_mat_YYYYMM.zip` | [matriculaciones-automoviles-mensual](https://www.dgt.es/menusecundario/dgt-en-cifras/matraba-listados/matriculaciones-automoviles-mensual.html) | desde **2014-12** hasta el mes cerrado |
+| Diaria | `<ROOT>/export_mat_YYYYMMDD.zip` | [matriculaciones-automoviles-diario](https://www.dgt.es/menusecundario/dgt-en-cifras/matraba-listados/matriculaciones-automoviles-diario.html) | sólo los últimos ~20 días |
+| Mensual | `<ROOT>/export_mensual_mat_YYYYMM.zip` | [matriculaciones-automoviles-mensual](https://www.dgt.es/menusecundario/dgt-en-cifras/matraba-listados/matriculaciones-automoviles-mensual.html) | desde **2014-12** hasta el mes cerrado |
 
 Dos detalles del patrón de URL que importan al programar la descarga: el mes va **sin cero a la izquierda** en la ruta (`/2026/8/`) y **con** cero en el nombre del fichero (`202608`); y el año y el mes de la ruta son los del periodo, no los de la publicación.
 
@@ -51,7 +54,18 @@ La única diferencia entre las dos series es la primera línea: **el fichero dia
 
 ## Qué contiene realmente
 
-A pesar del nombre, el fichero **no trae sólo matriculaciones**. El propio documento de la DGT enumera los trámites incluidos: matriculaciones de vehículos, de ciclomotores, temporales para empresas, temporales, rematriculaciones, prórrogas de matrícula temporal y pasos de matrícula temporal a definitiva. Y el diccionario de `CLAVE_TRAMITE` va más allá e incluye transferencias y bajas —definitivas, temporales, por Plan Renove, por exportación—. Filtrar por `CLAVE_TRAMITE` y por `COD_CLASE_MAT` no es un refinamiento: es lo que separa una serie de matriculaciones de un revuelto de trámites.
+A pesar del nombre, el fichero **no trae sólo matriculaciones ordinarias**. El propio documento de la DGT enumera los trámites incluidos: matriculaciones de vehículos, de ciclomotores, temporales para empresas, temporales, rematriculaciones, prórrogas de matrícula temporal y pasos de matrícula temporal a definitiva.
+
+El diccionario de `CLAVE_TRAMITE` es más ancho que eso y llega a incluir transferencias y bajas, pero **eso es porque el mismo diccionario sirve para los tres ficheros hermanos** de la DGT. En el de matriculaciones sólo aparecen trámites de alta. Contado sobre `export_mat_20260828.txt`, sus 10.486 registros se reparten así:
+
+| `CLAVE_TRAMITE` | Descripción | Registros |
+|---|---|---:|
+| 1 | Matriculación ordinaria y de ciclomotores | 10.259 |
+| 9 | Matriculación temporal | 133 |
+| B | Paso de matrícula temporal a definitiva | 93 |
+| 5 | Rematriculación | 1 |
+
+Ni una baja, ni una transferencia. Aun así hay que mirar `CLAVE_TRAMITE`, porque el `9` y el `B` son **el mismo vehículo contado dos veces** si se suman sin más: primero se matricula en temporal y después pasa a definitiva. Y en el mismo fichero, **9.630 registros son de vehículo nuevo y 856 de usado** (`IND_NUEVO_USADO`), o sea un 8,1% de altas de usados, casi todas importaciones.
 
 Los campos se agrupan así:
 
@@ -71,11 +85,44 @@ Los campos se agrupan así:
 
 **Y la geografía es la del domicilio, no la del punto de venta.** `COD_PROVINCIA_VEH` es donde está domiciliado el vehículo y `COD_PROVINCIA_MAT` donde se matriculó; ninguno de los dos es dónde se vendió. En las flotas de renting y en las empresas de alquiler la divergencia es grande y sistemática, no ruido.
 
-## Lo que queda por decidir
+## Las otras fuentes de la DGT
 
-Estas decisiones son de alcance y afectan a todo lo que se construya encima, así que se toman antes de codificar la ETL:
+Las matriculaciones son una de cuatro familias de microdatos de vehículos que publica la DGT, todas con la misma mecánica de listados diarios y mensuales:
 
-1. **Alcance histórico**: los 139 meses desde 2014-12 o sólo los últimos años.
-2. **Qué trámites entran**: todos los de `CLAVE_TRAMITE`, o sólo las matriculaciones; y dentro de ellas, si entran ciclomotores, remolques, vehículos especiales y matrículas temporales.
-3. **Granularidad de destino**: registro crudo con los 69 campos; registro depurado con catálogos normalizados; o sólo agregados por periodo, geografía y tipo de vehículo.
-4. **Qué hacer con los diarios y los mensuales a la vez**: si el mensual se considera la versión definitiva del periodo y sustituye a los diarios ya cargados, o si conviven. Los diarios de un mes y su mensual **no tienen por qué coincidir registro a registro**, y eso hay que medirlo antes de decidir.
+| Familia | Raíz de la URL | Cobertura mensual | Diseño de registro |
+|---|---|---|---|
+| [Matriculaciones](https://www.dgt.es/menusecundario/dgt-en-cifras/dgt-en-cifras-resultados/dgt-en-cifras-detalle/Microdatos-de-Matriculaciones-de-Vehiculos-diarios/) | `.../YYYY/M/vehiculos/matriculaciones` | desde 2014-12 | [MATRICULACIONES_MATRABA.pdf](https://www.dgt.es/export/sites/web-DGT/.galleries/downloads/dgt-en-cifras/matraba/MATRICULACIONES_MATRABA.pdf) |
+| [Bajas](https://www.dgt.es/menusecundario/dgt-en-cifras/dgt-en-cifras-resultados/dgt-en-cifras-detalle/Microdatos-de-Bajas-de-Vehiculos-diarios/) | `.../YYYY/M/vehiculos/bajas` | desde 2014-12 | [BAJAS_MATRABA.pdf](https://www.dgt.es/export/sites/web-DGT/.galleries/downloads/dgt-en-cifras/matraba/BAJAS_MATRABA.pdf) |
+| [Transferencias](https://www.dgt.es/menusecundario/dgt-en-cifras/dgt-en-cifras-resultados/dgt-en-cifras-detalle/Microdatos-de-Transferencias-de-Vehiculos-diarios/) | `.../YYYY/M/vehiculos/transferencias` | no comprobada | no comprobado |
+| [Parque de vehículos](https://www.dgt.es/menusecundario/dgt-en-cifras/dgt-en-cifras-resultados/dgt-en-cifras-detalle/Microdatos-de-parque-de-vehiculos-mensual/) | `https://www.dgt.es/microdatos/Parque/` | desde 2025-03 (mensual) | [Interfaz-de-Salida-Fichero-Parque-Anual.pdf](https://www.dgt.es/export/sites/web-DGT/.galleries/downloads/dgt-en-cifras/matraba/Interfaz-de-Salida-Fichero-Parque-Anual.pdf) |
+
+### Bajas
+
+Entra en el [alcance](alcance.md) por decisión expresa. Los nombres de fichero son `export_bajas_YYYYMMDD.zip` y `export_mensual_bajas_YYYYMM.zip`, y el histórico mensual arranca en **2014-12**, igual que el de matriculaciones.
+
+**El diseño de registro es el mismo**: 714 bytes, 69 campos, en el mismo orden y con las mismas longitudes. La única diferencia entre los dos documentos oficiales es el nombre del campo 14, que en bajas se llama `NUM_PLAZAS_ITV` y en matriculaciones `NUM_PLAZAS`; el contenido descrito es idéntico. O sea que **el mismo troceado sirve para las dos fuentes**, y pueden vivir en la misma tabla con una columna que diga de qué fichero vienen.
+
+Dos diferencias que sí afectan a la carga, medidas sobre `export_bajas_20260828.txt`:
+
+- **El fichero de bajas no lleva línea de cabecera**, ni siquiera el diario. Todas sus líneas son registros de 714 bytes.
+- Es **más pequeño**: 6.268 bajas ese día frente a 10.486 altas. Los mensuales, en cambio, pesan parecido (14.673.454 bytes el de 2026-07) y los antiguos pesan **más** que los de matriculaciones (20.415.430 bytes el de 2014-12, contra 9.481.060 el de matriculaciones del mismo mes): en aquel momento se achatarraba mucho más de lo que se matriculaba.
+
+Y el contenido es el esperado, con una sorpresa que importa mucho para el ciclo de vida. Reparto de los 6.268 registros de ese día:
+
+| `CLAVE_TRAMITE` | Descripción | Registros |
+|---|---|---:|
+| 6 | Baja temporal | 3.784 |
+| 3 | Baja definitiva (excluidos Plan Renove, exportación y tránsito comunitario) | 2.110 |
+| 7 | Baja definitiva por exportación y por tránsito comunitario | 374 |
+
+**El 60% de las bajas son temporales**, y una baja temporal no saca al vehículo del parque: se da de baja para no pagar seguro mientras está parado, y vuelve. Sumar bajas sin separar por `CLAVE_TRAMITE` cuenta como desaparecidos vehículos que siguen existiendo. Coherentemente, en esos 3.784 registros `IND_BAJA_DEF` viene en blanco; en las bajas definitivas sí trae el motivo, y ese día el reparto fue 1.933 por exportación (`7`), 316 por tránsito comunitario (`9`), 129 de oficio por abandono (`A`), 58 exportación (`8`), 32 desguace (`0`) y 16 por tratamiento residual (`C`).
+
+### Parque de vehículos
+
+No estaba en el encargo, pero es la fuente que responde directamente a «agregados de parque móvil», así que conviene saber que existe: la DGT publica **el censo completo de vehículos**, no los eventos. Hay versión anual y versión mensual, y esta última **sólo desde 2025-03**, en fichero nacional (`parque_vehiculos_YYYYMM.zip`) y en ficheros por provincia (`parque_vehiculos_YYYYMM_PROVINCIA.zip`).
+
+El precio es el tamaño: el nacional de 2026-07 pesa **1.748.777.115 bytes comprimido**, o sea unas cien veces un mensual de matriculaciones. Un solo mes de parque pesa más que todo el histórico de matriculaciones junto. Su diseño de registro es **distinto** al de MATRABA y no se ha analizado.
+
+## El alcance
+
+Las cuatro decisiones que quedaban abiertas en este documento las cerró Víctor el 2026-08-31 y están en [alcance.md](alcance.md), junto con las tres tensiones que hay que resolver antes de dar por buenos los agregados.
