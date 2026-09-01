@@ -281,7 +281,7 @@ CREATE TABLE spain.registration (
   place_pk                 integer REFERENCES spain.place,
   service_code             text    REFERENCES spain.service,
   plate_province_code      text    REFERENCES spain.province,
-  procedure_code           text    NOT NULL REFERENCES spain.procedure_type,
+  procedure_code           text    REFERENCES spain.procedure_type,
   plate_class_code         text    REFERENCES spain.plate_class,
   origin_code              text    REFERENCES spain.origin,
   is_used                  boolean,
@@ -300,7 +300,7 @@ CREATE TABLE spain.deregistration (
   place_pk                 integer REFERENCES spain.place,
   service_code             text    REFERENCES spain.service,
   plate_province_code      text    REFERENCES spain.province,
-  procedure_code           text    NOT NULL REFERENCES spain.procedure_type,
+  procedure_code           text    REFERENCES spain.procedure_type,
   reason_code              text    REFERENCES spain.deregistration_reason,
   transfer_count           smallint,
   owner_count              smallint,
@@ -405,6 +405,11 @@ COMMENT ON COLUMN spain.registration.period IS
   'by. It is not always the month of procedure_date: 0 to 2.5% of the rows carry '
   'procedures from earlier months.';
 COMMENT ON COLUMN spain.registration.procedure_date IS 'FEC_TRAMITE: the date of the event itself.';
+COMMENT ON COLUMN spain.registration.procedure_code IS
+  'CLAVE_TRAMITE. Nullable, and it took a load to find out why: the two 707-character '
+  'records of 2014-12 carry it blank. The rest of their fields are good, so they are '
+  'loaded; the park_entry and park_exit views do not count them, because a null does '
+  'not match an IN list -- which is the honest answer when the procedure is unknown.';
 COMMENT ON COLUMN spain.registration.process_date IS
   'FEC_PROCESO: when the DGT recorded it. Null in the two records of 2014-12 that '
   'carry a ? instead of a date.';
