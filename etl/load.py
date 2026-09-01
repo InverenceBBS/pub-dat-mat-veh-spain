@@ -198,7 +198,10 @@ def psql(script, database=DATABASE, quiet=True):
         print('-- (y %d líneas de datos)' % (len(script.splitlines()) - len(lines)))
         return ''
 
-    command = ['psql', '-X', '-v', 'ON_ERROR_STOP=1', '-d', database]
+    # -P pager=off because psql pages to a terminal and then waits for a
+    # keypress, which would hang the load the day its output is not a pipe.
+    command = ['psql', '-X', '-P', 'pager=off', '-v', 'ON_ERROR_STOP=1',
+               '-d', database]
     if quiet:
         command += ['-q']
     process = subprocess.Popen(command, stdin=subprocess.PIPE,

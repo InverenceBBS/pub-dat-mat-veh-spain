@@ -9,6 +9,11 @@
 -- are in doc/fase0-resultados.md.
 -- ============================================================================
 
+-- No pager, ever: psql pipes its output through less when it is writing to a
+-- terminal, and then it waits for a keypress. A script that stops to be read is
+-- not automatable.
+\pset pager off
+
 \echo ''
 \echo '=== 1. Ficheros cargados, y si las filas cuadran con las líneas del fichero'
 SELECT kind, granularity, period, file_name, line_count, row_count,

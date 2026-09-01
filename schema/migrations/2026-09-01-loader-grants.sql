@@ -15,5 +15,10 @@
 --   TEMPORARY on the database, because the load slices the raw line into a
 --   temporary table. PUBLIC has it by default; it is stated here so that the day
 --   someone revokes PUBLIC, the load does not stop with a puzzling error.
+-- No pager, ever: psql pipes its output through less when it is writing to a
+-- terminal, and then it waits for a keypress. A script that stops to be read is
+-- not automatable.
+\pset pager off
+
 GRANT TRUNCATE ON spain.staging_line TO archive_rw;
 GRANT TEMPORARY ON DATABASE matveh TO archive_rw;

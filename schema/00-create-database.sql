@@ -31,6 +31,11 @@
 -- the TOL container, a debt matveh need not inherit).
 -- ============================================================================
 
+-- No pager, ever: psql pipes its output through less when it is writing to a
+-- terminal, and then it waits for a keypress. A script that stops to be read is
+-- not automatable.
+\pset pager off
+
 \echo '--- the three roles must already exist'
 DO $guard$
 DECLARE

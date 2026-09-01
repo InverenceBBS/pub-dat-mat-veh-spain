@@ -23,7 +23,7 @@ fi
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 RAW=${MATVEH_RAW:-/data/matveh/raw}
-PSQL="psql -v ON_ERROR_STOP=1 -d matveh"
+PSQL="psql -v ON_ERROR_STOP=1 -P pager=off -d matveh"
 
 step() { echo; echo "══════ $* ══════"; }
 

@@ -26,6 +26,11 @@
 -- does not carry -- see doc/alcance.md.
 -- ============================================================================
 
+-- No pager, ever: psql pipes its output through less when it is writing to a
+-- terminal, and then it waits for a keypress. A script that stops to be read is
+-- not automatable.
+\pset pager off
+
 SET ROLE model_archive;
 
 BEGIN;

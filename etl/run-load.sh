@@ -25,7 +25,7 @@ WHAT=${1:---pending}
 step() { echo; echo "══════ $* ══════"; }
 
 step "Con quién se conecta"
-psql -tAc "select 'conectado a '||current_database()||' como '||current_user"
+psql -P pager=off -tAc "select 'conectado a '||current_database()||' como '||current_user"
 
 step "Los catálogos del Anexo I"
 python3 "$REPO/etl/load.py" --codes
@@ -34,7 +34,7 @@ step "La carga: $WHAT"
 python3 "$REPO/etl/load.py" "$@"
 
 step "Clasificar las fichas por tamaño"
-psql -c "SELECT spain.classify_size() AS fichas_clasificadas"
+psql -P pager=off -c "SELECT spain.classify_size() AS fichas_clasificadas"
 
 step "Las comprobaciones, contra doc/fase0-resultados.md"
-psql -f "$REPO/schema/checks.sql"
+psql -P pager=off -f "$REPO/schema/checks.sql"

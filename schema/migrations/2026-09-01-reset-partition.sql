@@ -5,6 +5,11 @@
 --
 -- Same content as the function in 01-spain-schema.sql. Changing one function
 -- does not need the whole schema rerun, and rerunning it would delete the data.
+-- No pager, ever: psql pipes its output through less when it is writing to a
+-- terminal, and then it waits for a keypress. A script that stops to be read is
+-- not automatable.
+\pset pager off
+
 SET ROLE model_archive;
 
 -- Empties a period and leaves its partition ready: what a monthly load needs,

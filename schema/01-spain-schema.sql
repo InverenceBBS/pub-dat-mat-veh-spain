@@ -20,6 +20,11 @@
 -- first so that alignment padding does not waste bytes on 20 million rows.
 -- ============================================================================
 
+-- No pager, ever: psql pipes its output through less when it is writing to a
+-- terminal, and then it waits for a keypress. A script that stops to be read is
+-- not automatable.
+\pset pager off
+
 \echo '--- this file recreates the schema; it refuses if anything is loaded'
 -- The existence check and the count CANNOT be one expression: PL/pgSQL parses a
 -- static query when the statement runs, so a reference to spain.registration
