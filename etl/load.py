@@ -104,7 +104,11 @@ EVENT = [
 ]
 # Which catalogue each coded column validates against, so that a code that is
 # not in the Anexo I is registered instead of rejecting the row.
+# 'province_code' is the one in place and municipality, and it was missing here:
+# a '?' turned up in COD_PROVINCIA_VEH in 2017-03 and stopped the load. Every
+# column with a foreign key to a catalogue has to be in this list.
 CATALOGUE_OF = [('service_code', 'service'), ('plate_province_code', 'province'),
+                ('province_code', 'province'),
                 ('procedure_code', 'procedure_type'), ('plate_class_code', 'plate_class'),
                 ('origin_code', 'origin'), ('reason_code', 'deregistration_reason'),
                 ('vehicle_type_code', 'vehicle_type'), ('propulsion_code', 'propulsion'),
@@ -324,8 +328,9 @@ def load_file(path, fields, manifest):
     # FIRST: vehicle_spec has foreign keys to vehicle_type, propulsion and
     # electric_category, so inserting the sheet before its codes exist fails
     # on the first s3 that turns up -- which is exactly what happened.
+    available = set(EVENT_COLUMNS[kind]) | set(spec_columns) | set(c for c, _, _ in PLACE)
     for column, catalogue in CATALOGUE_OF:
-        if column in EVENT_COLUMNS[kind] or column in spec_columns:
+        if column in available:
             script.append(
                 "INSERT INTO spain.%s (code, description, is_documented)\n"
                 "SELECT DISTINCT %s, 'no documentado en el Anexo I', false FROM row_in\n"
