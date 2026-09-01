@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """When does the DGT actually publish each daily file?
 
-    python3 publication-hours.py
+    python3 publication-hours.py            the whole picture
+    python3 publication-hours.py --watch    week by week, to see it drift
 
 The DGT documents no schedule, so this is measured, and the source is the only
 one available: the HTTP **Last-Modified** header that its web server returns for
@@ -33,7 +34,40 @@ def rows():
             yield dict(zip(head, line.rstrip('\n').split('\t')))
 
 
+def watch():
+    """Week by week, so a change of habit shows up instead of being averaged away.
+
+    Losing files is not what this guards against -- two passes a day and
+    --recent 4 already tolerate the DGT moving its hour by up to four days. This
+    is so that we FIND OUT, which the download alone would never tell us.
+    """
+    weeks = collections.defaultdict(collections.Counter)
+    for r in rows():
+        if r.get('granularity') != 'daily' or not r.get('http_last_modified'):
+            continue
+        published = datetime.strptime(r['http_last_modified'], '%a, %d %b %Y %H:%M:%S %Z')
+        data_day = datetime.strptime(r['period'], '%Y%m%d')
+        year, week, _ = data_day.isocalendar()
+        weeks['%d-S%02d' % (year, week)]['%02d:%02d' % (published.hour, published.minute)] += 1
+
+    print('# Hora de publicación, semana a semana\n')
+    print('| Semana de los datos | Horas de publicación (GMT) |')
+    print('|---|---|')
+    for week in sorted(weeks):
+        detail = ', '.join('%s x%d' % (h, n) for h, n in sorted(weeks[week].items()))
+        print('| %s | %s |' % (week, detail))
+    print('\nLo esperado es 06:30, y 13:00 de vez en cuando. Cualquier otra hora que se '
+          'repita quiere decir que la DGT ha cambiado de costumbre, y entonces hay que '
+          'revisar las dos pasadas del cron.')
+    return 0
+
+
 def main():
+    if '--watch' in sys.argv[1:]:
+        if not os.path.exists(MANIFEST):
+            print('No hay manifiesto en %s' % MANIFEST)
+            return 1
+        return watch()
     if not os.path.exists(MANIFEST):
         print('No hay manifiesto en %s' % MANIFEST)
         return 1
