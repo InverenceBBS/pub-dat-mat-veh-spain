@@ -33,6 +33,9 @@ BEGIN
   IF to_regclass('spain.registration') IS NOT NULL THEN
     EXECUTE 'SELECT EXISTS (SELECT 1 FROM spain.registration)' INTO loaded;
   END IF;
+  IF NOT loaded AND to_regclass('spain.deregistration') IS NOT NULL THEN
+    EXECUTE 'SELECT EXISTS (SELECT 1 FROM spain.deregistration)' INTO loaded;
+  END IF;
   IF loaded AND coalesce(current_setting('spain.allow_reset', true), '') <> 'yes' THEN
     RAISE EXCEPTION
       'spain holds loaded events and this file would delete them. If that is '

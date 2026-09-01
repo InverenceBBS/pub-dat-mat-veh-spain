@@ -308,8 +308,21 @@ def load_file(path, fields, manifest):
     script.append('\\.')
     script.append(row_in_sql(fields))
 
-    # The dimensions, before the events that point at them.
     spec_columns = [c for c, _, _ in SPEC]
+
+    # Codes that are not in the Anexo I: registered, not rejected. THIS GOES
+    # FIRST: vehicle_spec has foreign keys to vehicle_type, propulsion and
+    # electric_category, so inserting the sheet before its codes exist fails
+    # on the first s3 that turns up -- which is exactly what happened.
+    for column, catalogue in CATALOGUE_OF:
+        if column in EVENT_COLUMNS[kind] or column in spec_columns:
+            script.append(
+                "INSERT INTO spain.%s (code, description, is_documented)\n"
+                "SELECT DISTINCT %s, 'no documentado en el Anexo I', false FROM row_in\n"
+                " WHERE %s IS NOT NULL ON CONFLICT (code) DO NOTHING;"
+                % (catalogue, column, column))
+
+    # The dimensions, before the events that point at them.
     script.append(
         "INSERT INTO spain.vehicle_spec (spec_hash, %s)\n"
         "SELECT DISTINCT ON (spec_hash) spec_hash, %s FROM row_in\n"
@@ -327,15 +340,6 @@ def load_file(path, fields, manifest):
         " r.postal_code, r.locality\n"
         "  FROM row_in r LEFT JOIN spain.municipality m USING (ine_code)\n"
         "ON CONFLICT (place_hash) DO NOTHING;")
-
-    # Codes that are not in the Anexo I: registered, not rejected.
-    for column, catalogue in CATALOGUE_OF:
-        if column in EVENT_COLUMNS[kind] or column in spec_columns:
-            script.append(
-                "INSERT INTO spain.%s (code, description, is_documented)\n"
-                "SELECT DISTINCT %s, 'no documentado en el Anexo I', false FROM row_in\n"
-                " WHERE %s IS NOT NULL ON CONFLICT (code) DO NOTHING;"
-                % (catalogue, column, column))
 
     # And the events. A row with no usable procedure date is not loaded: the
     # count of what was left out is written to source_file.
