@@ -4,6 +4,7 @@
     python3 download.py [period ...]        e.g. mat:201412 bajas:20260831
     python3 download.py --recent [days]    today and the days before it
     python3 download.py --history          every monthly file, 2014-12 onwards
+    python3 download.py --check [days]     ask HEAD first, download only what changed
 
 Six digits mean the monthly file of that period; eight, the daily one of that
 day. --recent is what the daily job runs: it asks for the last few days of both
@@ -25,6 +26,7 @@ import hashlib
 import io
 import os
 import sys
+import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
@@ -107,6 +109,60 @@ def download(kind, period, rows):
     print('%-40s %10d bytes  %s' % (name, rows[name]['byte_size'], rows[name]['sha256'][:12]))
 
 
+def head(url):
+    """The headers of a URL, or None if it is not published.
+
+    This is the cheap way to ask "is there anything new?": a HEAD returns the
+    ETag, the size and the date with ZERO bytes of body, so it can be run every
+    hour without weighing on anyone.
+
+    Conditional GETs would be cheaper still and they DO NOT WORK here: measured
+    on 2026-09-01, the DGT's server ignores both If-None-Match and
+    If-Modified-Since and answers 200 with the whole file. Hence HEAD plus our
+    own comparison against the manifest.
+    """
+    request = urllib.request.Request(url, method='HEAD',
+                                     headers={'User-Agent': 'matveh/0.1'})
+    try:
+        with urllib.request.urlopen(request, timeout=60) as answer:
+            return answer.headers
+    except urllib.error.HTTPError as trouble:
+        if trouble.code == 404:
+            return None
+        raise
+
+
+def check(days, rows):
+    """What of the last `days` is new or has changed on the server.
+
+    Also catches something a plain download never would: a file the DGT REWRITES
+    after we took it. Comparing our stored ETag against the current one is the
+    only way to notice, and then the load replaces that day, so a reprocess ends
+    up in the database instead of being ignored for ever.
+    """
+    wanted = []
+    for item in recent(days):
+        kind, period = item.split(':')
+        url = url_of(kind, period)
+        name = url.rsplit('/', 1)[1]
+        headers = head(url)
+        if headers is None:
+            print('%-40s no publicado' % name)
+            continue
+        etag = (headers.get('etag') or '').strip('"')
+        known = rows.get(name)
+        if known is None:
+            print('%-40s NUEVO' % name)
+            wanted.append(item)
+        elif etag and etag != known.get('http_etag'):
+            print('%-40s CAMBIADO en el servidor (etag %s -> %s)'
+                  % (name, known.get('http_etag'), etag))
+            wanted.append(item)
+        else:
+            print('%-40s sin cambios' % name)
+    return wanted
+
+
 def recent(days):
     """The last `days` days, both families, most recent first.
 
@@ -148,6 +204,12 @@ def main(argv):
         days = int(argv[1]) if len(argv) > 1 else 3
         argv = recent(days)
     rows = read_manifest()
+    if argv and argv[0] == '--check':
+        days = int(argv[1]) if len(argv) > 1 else 4
+        argv = check(days, rows)
+        if not argv:
+            print('\nNada nuevo.')
+            return
     for item in (argv or SAMPLE):
         kind, period = item.split(':')
         try:

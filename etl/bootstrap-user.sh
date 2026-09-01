@@ -31,7 +31,13 @@ step "3. La captura diaria"
 # The daily files are the only ones carrying the homologation password and the
 # DGT keeps them some twenty days: what is not downloaded on the day is lost.
 #
-# The hours are measured, not guessed. Out of the 53 daily files whose
+# Hourly, and it costs almost nothing: --check asks HEAD first, which returns the
+# ETag with zero bytes of body, and only downloads what is new or has changed on
+# the server. Eight HEAD requests an hour. It also removes the need to guess the
+# publication hour at all -- and catches a file the DGT rewrites after we took it,
+# which a plain daily download would never notice.
+#
+# The hours below are measured, not guessed. Out of the 53 daily files whose
 # last-modified was captured on download, 43 were published at 06:30 UTC of the
 # day AFTER the data, and 10 at 13:00 UTC. Hence two passes, and --recent 4 to
 # pick up whatever a weekend delays: the median lag is +30.5 hours.
@@ -39,8 +45,7 @@ step "3. La captura diaria"
 # The third line watches the hour itself. Losing files is already covered -- two
 # passes and --recent 4 tolerate the DGT moving by up to four days -- but nothing
 # would TELL US that it moved, and there is no published schedule to rely on.
-CRON_LINE="0 7 * * * /usr/bin/python3 $REPO/etl/download.py --recent 4 >> $LOGDIR/matveh-download.log 2>&1
-0 14 * * * /usr/bin/python3 $REPO/etl/download.py --recent 4 >> $LOGDIR/matveh-download.log 2>&1
+CRON_LINE="7 * * * * /usr/bin/python3 $REPO/etl/download.py --check 4 >> $LOGDIR/matveh-download.log 2>&1
 30 7 * * 1 /usr/bin/python3 $REPO/phase0/publication-hours.py --watch >> $LOGDIR/matveh-horario.log 2>&1"
 if crontab -l 2>/dev/null | grep -qF "$REPO/etl/download.py"; then
   echo "ya estaba en el crontab:"

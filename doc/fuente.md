@@ -42,6 +42,8 @@ Medido el **2026-09-01** sobre **53 ficheros diarios** de agosto de 2026:
 
 El desfase entre el día de los datos y su publicación va de **+30,5 horas** —lo normal: el fichero del día D aparece a las 06:30 del día D+1— a **+61 horas** en los puentes de fin de semana. De ahí que la captura automática haga dos pasadas, a las 07:00 y a las 14:00 UTC, y pida los cuatro últimos días en cada una.
 
+**Y hay un chivato barato: `HEAD` sí, condicionales no.** Medido el 2026-09-01 contra el servidor de la DGT: una petición `HEAD` devuelve `200` con el `ETag`, el tamaño y la fecha y **cero bytes** de cuerpo, mientras que un GET condicional —tanto con `If-None-Match` como con `If-Modified-Since`— **se ignora** y responde `200` con el fichero entero, 1,3 MB. Así que la comprobación de novedades se hace con `HEAD` y comparando el `ETag` con el del manifiesto, que es lo que hace `download.py --check`, y sale tan barata que puede correr cada hora en vez de adivinar el horario.
+
 **Qué mide esto y qué no.** `Last-Modified` es el instante en que el fichero se escribió por última vez en el servidor, que es lo más parecido a su publicación que se puede observar desde fuera; no es un horario anunciado y nada garantiza que la DGT lo mantenga. Dos consecuencias: un fichero reescrito más tarde sin cambiar de contenido parecería publicado más tarde de lo que fue, y la hora la pone **el reloj del servidor de la DGT**, no el nuestro.
 
 ## Cuánto pesa (medido el 2026-08-31)
