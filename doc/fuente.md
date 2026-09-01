@@ -29,7 +29,20 @@ La página oficial declara actualización **diaria**. Cada fichero ZIP contiene 
 
 **Las matriculaciones no se publican los fines de semana; las bajas sí.** Medido sobre los 31 días de agosto de 2026: hay fichero de bajas los 31 días, y de matriculaciones sólo de lunes a viernes, con una única excepción —el domingo 9, con dos registros—. Así que un `404` en el diario de matriculaciones de un sábado o un domingo es lo normal y no indica ningún problema.
 
-**Cuándo se publica cada diario, medido el 2026-09-01** y no documentado en ninguna parte de la DGT: sobre los `last-modified` que devolvió el servidor al descargar 53 ficheros diarios de agosto de 2026, **43 se publicaron a las 06:30 UTC del día siguiente al de los datos** y 10 a las 13:00 UTC. El desfase mediano entre el día de los datos y su publicación es de **+30,5 horas**, con un máximo de +61 horas en los puentes de fin de semana. De ahí que la captura automática haga dos pasadas, a las 07:00 y a las 14:00 UTC, y pida los cuatro últimos días en cada una.
+### Cuándo se publica cada diario
+
+**La DGT no publica ningún horario**, ni en la página de listados ni en el documento de interfaz, así que el dato está **medido, y de una sola fuente**: la cabecera HTTP **`Last-Modified`** que devuelve su propio servidor web para cada ZIP. [etl/download.py](../etl/download.py) la captura en cada descarga y la guarda, junto al `sha256` y al `ETag`, en el `manifest.tsv` del almacén de ficheros; [phase0/publication-hours.py](../phase0/publication-hours.py) la lee de ahí y reproduce la tabla, así que la cifra se puede recalcular cuando se quiera y **conviene hacerlo**, porque la DGT puede cambiar de costumbre sin avisar a nadie.
+
+Medido el **2026-09-01** sobre **53 ficheros diarios** de agosto de 2026:
+
+| Hora de publicación (GMT) | Ficheros |
+|---|---:|
+| 06:30 | 43 |
+| 13:00 | 10 |
+
+El desfase entre el día de los datos y su publicación va de **+30,5 horas** —lo normal: el fichero del día D aparece a las 06:30 del día D+1— a **+61 horas** en los puentes de fin de semana. De ahí que la captura automática haga dos pasadas, a las 07:00 y a las 14:00 UTC, y pida los cuatro últimos días en cada una.
+
+**Qué mide esto y qué no.** `Last-Modified` es el instante en que el fichero se escribió por última vez en el servidor, que es lo más parecido a su publicación que se puede observar desde fuera; no es un horario anunciado y nada garantiza que la DGT lo mantenga. Dos consecuencias: un fichero reescrito más tarde sin cambiar de contenido parecería publicado más tarde de lo que fue, y la hora la pone **el reloj del servidor de la DGT**, no el nuestro.
 
 ## Cuánto pesa (medido el 2026-08-31)
 
