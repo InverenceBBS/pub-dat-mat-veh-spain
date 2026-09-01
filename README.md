@@ -13,7 +13,7 @@ Este repositorio **no contiene datos**. Contiene lo necesario para conseguirlos 
 
 ## Estado
 
-**Reconocimiento y documentación de la fuente, con el alcance ya decidido.** La ETL todavía no está escrita; lo que hay documentado es qué publica la DGT, cómo son los ficheros, qué se puede y qué no se puede hacer con ellos, y qué se va a cargar.
+**Diseño propuesto y medido, sin implementar.** La ETL todavía no está escrita. Lo que hay es qué publica la DGT, cómo son los ficheros, qué se puede y qué no se puede hacer con ellos, qué se va a cargar, el diseño de la base de datos y las mediciones sobre ficheros reales que ese diseño necesitaba. Los guiones de medición, que no tocan ninguna base de datos, están en [phase0/](phase0/).
 
 ## Documentación
 
@@ -24,6 +24,8 @@ Este repositorio **no contiene datos**. Contiene lo necesario para conseguirlos 
 | [doc/diseno-de-registro.md](doc/diseno-de-registro.md) | Los 69 campos con longitud, posición de inicio y fin, tipo y descripción, y la comprobación del troceado contra un fichero real |
 | [doc/record-layout.tsv](doc/record-layout.tsv) | Lo mismo en formato manejable por un programa: es la fuente del troceado, no una copia |
 | [doc/tablas-de-codigos.md](doc/tablas-de-codigos.md) | El Anexo I completo: clase de matrícula, procedencia, servicio, tipo de vehículo, propulsión, provincias, trámite, baja definitiva y categoría de vehículo eléctrico |
+| [doc/diseno-de-base-de-datos-y-etl.md](doc/diseno-de-base-de-datos-y-etl.md) | **Propuesta, sin implementar**: el esquema `spain` tabla por tabla, el destino de cada uno de los 69 campos, el particionado por mes, los seis pasos de la carga y lo que hay que medir antes de fijar el DDL |
+| [doc/fase0-resultados.md](doc/fase0-resultados.md) | Las diez mediciones sobre ficheros reales que había que hacer antes de fijar el esquema, con los cinco hallazgos que lo cambian |
 
 ## Lo esencial en cinco líneas
 

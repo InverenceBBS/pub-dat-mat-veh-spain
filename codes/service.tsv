@@ -1,0 +1,27 @@
+code	description
+A00	Público PUBL-Sin especificar
+A01	Público PUBL-Alquiler sin conductor
+A02	Público PUBL-Alquiler con conductor
+A03	Público PUBL-Aprendizaje de conducción
+A04	Público PUBL-Taxi
+A05	Público PUBL-Auxilio en carretera
+A07	Público PUBL-Ambulancia
+A08	Público PUBL-Funerario
+A09	Particular PART-Obras
+A10	Público PUBL-Mercancías peligrosas
+A11	Público PUBL-Basurero
+A12	Público PUBL-Transporte escolar
+A13	Público PUBL-Policía
+A14	Público PUBL-Bomberos
+A15	Público PUBL-Protección civil y salvamento
+A16	Público PUBL-Defensa
+A18	Público PUBL-Actividad económica
+A20	Público PUBL-Mercancías perecederas
+B00	Particular PART-Sin especificar
+B06	Particular PART-Agrícola
+B07	ParticularPART-
+B09	Particular PART-Obras
+B17	Particular PART-Vivienda
+B18	Público PART-Actividad económica
+B19	Particular PART-Recreativo
+B21	Particular PART-Vehículo para ferias

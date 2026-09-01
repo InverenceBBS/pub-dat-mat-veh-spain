@@ -50,7 +50,7 @@ Es un volumen cómodo para una única tabla de PostgreSQL, aun sin trucos: con l
 
 Texto de **ancho fijo, 714 bytes por línea**, **ISO-8859-1**, **69 campos**, sin cabecera de columnas. El detalle campo a campo está en [diseno-de-registro.md](diseno-de-registro.md) y las tablas de códigos en [tablas-de-codigos.md](tablas-de-codigos.md).
 
-La única diferencia entre las dos series es la primera línea: **el fichero diario empieza con una línea de cabecera** de 79 bytes con el literal `Vehículos matriculados. Letras de la serie de la última matrícula asignada: ` y las tres letras de la última matrícula asignada. **El mensual no la lleva**, según dice el documento oficial en la página 3. La carga tiene que saltarla en los diarios, y no puede hacerlo por longitud sin más: hay que reconocerla.
+La única diferencia entre las dos series es la primera línea: **el fichero diario empieza con una línea de cabecera** de 79 bytes con el literal `Vehículos matriculados. Letras de la serie de la última matrícula asignada: ` y las tres letras de la última matrícula asignada. **El documento oficial dice en la página 3 que el mensual no la lleva, y no es cierto**: medidos el 2026-09-01 los mensuales de 2014-12, 2018-06, 2022-06 y 2026-04 a 2026-07, los siete traen su línea de cabecera. Los de bajas no la llevan, ni en diario ni en mensual, y eso sí coincide con lo documentado. Ver [fase0-resultados.md](fase0-resultados.md#y-una-corrección-a-lo-que-estaba-escrito). La carga tiene que saltarla en los diarios, y no puede hacerlo por longitud sin más: hay que reconocerla.
 
 ## Qué contiene realmente
 
