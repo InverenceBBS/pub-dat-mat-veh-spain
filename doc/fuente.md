@@ -27,6 +27,8 @@ O sea que el reparto natural del trabajo es: **el histórico se construye con lo
 
 La página oficial declara actualización **diaria**. Cada fichero ZIP contiene un único `.txt` con el mismo nombre.
 
+**Las matriculaciones no se publican los fines de semana; las bajas sí.** Medido sobre los 31 días de agosto de 2026: hay fichero de bajas los 31 días, y de matriculaciones sólo de lunes a viernes, con una única excepción —el domingo 9, con dos registros—. Así que un `404` en el diario de matriculaciones de un sábado o un domingo es lo normal y no indica ningún problema.
+
 **Cuándo se publica cada diario, medido el 2026-09-01** y no documentado en ninguna parte de la DGT: sobre los `last-modified` que devolvió el servidor al descargar 53 ficheros diarios de agosto de 2026, **43 se publicaron a las 06:30 UTC del día siguiente al de los datos** y 10 a las 13:00 UTC. El desfase mediano entre el día de los datos y su publicación es de **+30,5 horas**, con un máximo de +61 horas en los puentes de fin de semana. De ahí que la captura automática haga dos pasadas, a las 07:00 y a las 14:00 UTC, y pida los cuatro últimos días en cada una.
 
 ## Cuánto pesa (medido el 2026-08-31)
