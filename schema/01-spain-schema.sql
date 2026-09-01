@@ -363,6 +363,18 @@ END $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION spain.reset_partition(text, date) TO archive_rw;
 
 GRANT USAGE ON SCHEMA spain TO archive_ro, archive_rw;
+-- What the loading role needs beyond the default privileges, and nothing more:
+--
+--   TRUNCATE on the staging table only. It exists to be emptied on every load,
+--   and TRUNCATE otherwise belongs to the owner. Granting it on the event tables
+--   instead would hand over the power to wipe eleven years in one statement.
+--
+--   TEMPORARY on the database, because the load slices the raw line into a
+--   temporary table. PUBLIC has it by default; it is stated here so that the day
+--   someone revokes PUBLIC, the load does not stop with a puzzling error.
+GRANT TRUNCATE ON spain.staging_line TO archive_rw;
+GRANT TEMPORARY ON DATABASE matveh TO archive_rw;
+
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- 8. WHAT COUNTS AS ENTERING AND LEAVING THE PARK
