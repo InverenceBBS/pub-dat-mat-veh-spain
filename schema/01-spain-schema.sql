@@ -21,11 +21,19 @@
 -- ============================================================================
 
 \echo '--- this file recreates the schema; it refuses if anything is loaded'
+-- The existence check and the count CANNOT be one expression: PL/pgSQL parses a
+-- static query when the statement runs, so a reference to spain.registration
+-- would be analysed -- and fail on a virgin database -- even when to_regclass
+-- says the table is not there. Hence the nested IF and the dynamic EXECUTE,
+-- which is only parsed if it is reached.
 DO $guard$
+DECLARE
+  loaded boolean := false;
 BEGIN
-  IF to_regclass('spain.registration') IS NOT NULL
-     AND EXISTS (SELECT 1 FROM spain.registration LIMIT 1)
-     AND coalesce(current_setting('spain.allow_reset', true), '') <> 'yes' THEN
+  IF to_regclass('spain.registration') IS NOT NULL THEN
+    EXECUTE 'SELECT EXISTS (SELECT 1 FROM spain.registration)' INTO loaded;
+  END IF;
+  IF loaded AND coalesce(current_setting('spain.allow_reset', true), '') <> 'yes' THEN
     RAISE EXCEPTION
       'spain holds loaded events and this file would delete them. If that is '
       'what you want: PGOPTIONS="-c spain.allow_reset=yes" psql -f ...';
