@@ -289,9 +289,16 @@ def load_file(path, fields, manifest):
     records, header_lines, short_lines = read_lines(path)
     event_columns = [c for c, _, _ in EVENT if c in EVENT_COLUMNS[kind]]
 
+    # A monthly file replaces the period: its partition is emptied and rebuilt.
+    # A daily one cannot do that -- the partition is monthly and holds the other
+    # days -- so it deletes by process date instead.
+    partition_call = ('reset_partition' if granularity == 'monthly' else 'ensure_partition')
     script = ['BEGIN;',
-              "SELECT spain.ensure_partition('%s', DATE %s);" % (kind, literal(period)),
+              "SELECT spain.%s('%s', DATE %s);" % (partition_call, kind, literal(period)),
               'TRUNCATE spain.staging_line;']
+    if granularity == 'monthly':
+        script.append("DELETE FROM spain.source_file WHERE kind = %s AND period = DATE %s;"
+                      % (literal(kind), literal(period)))
     if granularity == 'daily':
         # A daily file cannot drop its partition, which is monthly and holds the
         # other days. It does not need to: measured over three daily files,
@@ -380,14 +387,6 @@ def load_file(path, fields, manifest):
             " WHERE kind = %s AND period = DATE %s AND granularity = 'daily';"
             % (literal(kind), literal(period)))
     script.append('COMMIT;')
-
-    # A monthly file replaces whatever the period held, dailies included.
-    prelude = ("BEGIN;\nDROP TABLE IF EXISTS spain.%s;\nCOMMIT;\n"
-               % ('%s_%s' % (kind, period[:7].replace('-', '_'))))
-    if granularity == 'monthly':
-        psql(prelude)
-        psql("DELETE FROM spain.source_file WHERE kind = %s AND period = DATE %s;"
-             % (literal(kind), literal(period)))
 
     psql('\n'.join(script))
     print('%-38s %s %s  %7d registros%s' % (

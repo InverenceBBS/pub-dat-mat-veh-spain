@@ -340,6 +340,28 @@ END $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- when the load runs as archive_rw, which is the role that machines carry. The
 -- two arguments are checked above, so there is nothing to inject through them.
 GRANT EXECUTE ON FUNCTION spain.ensure_partition(text, date) TO archive_rw;
+-- Empties a period and leaves its partition ready: what a monthly load needs,
+-- since the monthly file replaces whatever the period held.
+--
+-- SECURITY DEFINER for the same reason as ensure_partition: dropping a partition
+-- belongs to the owner, and the loading role has no business owning tables. The
+-- alternative was granting TRUNCATE on every partition to archive_rw, which
+-- gives away more than the load needs.
+CREATE OR REPLACE FUNCTION spain.reset_partition(which text, period date)
+RETURNS text AS $$
+DECLARE
+  first_day date := date_trunc('month', period)::date;
+  part text := format('%s_%s', which, to_char(first_day, 'YYYY_MM'));
+BEGIN
+  IF which NOT IN ('registration', 'deregistration') THEN
+    RAISE EXCEPTION 'There is no % table', which;
+  END IF;
+  EXECUTE format('DROP TABLE IF EXISTS spain.%I', part);
+  RETURN spain.ensure_partition(which, first_day);
+END $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION spain.reset_partition(text, date) TO archive_rw;
+
 GRANT USAGE ON SCHEMA spain TO archive_ro, archive_rw;
 
 -- ════════════════════════════════════════════════════════════════════════════
