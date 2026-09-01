@@ -3,6 +3,7 @@
 
     python3 download.py [period ...]        e.g. mat:201412 bajas:20260831
     python3 download.py --recent [days]    today and the days before it
+    python3 download.py --history          every monthly file, 2014-12 onwards
 
 Six digits mean the monthly file of that period; eight, the daily one of that
 day. --recent is what the daily job runs: it asks for the last few days of both
@@ -120,9 +121,29 @@ def recent(days):
     return items
 
 
+def history(first='201412'):
+    """Every monthly period from first up to the last closed month.
+
+    The current month has no monthly file yet, and neither does the one just
+    ended until the DGT closes it around the 15th, so both are simply asked for
+    and skipped on a 404.
+    """
+    year, month = int(first[:4]), int(first[4:6])
+    today = datetime.now(timezone.utc).date()
+    items = []
+    while (year, month) <= (today.year, today.month):
+        items += ['mat:%04d%02d' % (year, month), 'bajas:%04d%02d' % (year, month)]
+        month += 1
+        if month == 13:
+            year, month = year + 1, 1
+    return items
+
+
 def main(argv):
     if not os.path.isdir(RAW):
         os.makedirs(RAW)
+    if argv and argv[0] == '--history':
+        argv = history(argv[1] if len(argv) > 1 else '201412')
     if argv and argv[0] == '--recent':
         days = int(argv[1]) if len(argv) > 1 else 3
         argv = recent(days)
