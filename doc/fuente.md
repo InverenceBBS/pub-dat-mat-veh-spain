@@ -65,7 +65,7 @@ El diccionario de `CLAVE_TRAMITE` es más ancho que eso y llega a incluir transf
 | B | Paso de matrícula temporal a definitiva | 93 |
 | 5 | Rematriculación | 1 |
 
-Ni una baja, ni una transferencia. Aun así hay que mirar `CLAVE_TRAMITE`, porque el `9` y el `B` son **el mismo vehículo contado dos veces** si se suman sin más: primero se matricula en temporal y después pasa a definitiva. Y en el mismo fichero, **9.630 registros son de vehículo nuevo y 856 de usado** (`IND_NUEVO_USADO`), o sea un 8,1% de altas de usados, casi todas importaciones.
+Ni una baja, ni una transferencia. Aun así hay que mirar `CLAVE_TRAMITE`, porque el `9` y el `B` son **el mismo vehículo contado dos veces** si se suman sin más: primero se matricula en temporal y después pasa a definitiva. Y en el mismo fichero, **9.630 registros son de vehículo nuevo y 856 de usado** (`IND_NUEVO_USADO`), o sea un 8,1% de altas de usados. De esos usados, **835 (97,5%) constan como importación** —790 comunitaria y 45 extracomunitaria—: no son vehículos españoles que cambian de papeles, sino vehículos que entran por primera vez en el parque, y por eso [cuentan en los agregados](alcance.md#1-los-usados-entran-son-importaciones-no-rematriculaciones).
 
 Los campos se agrupan así:
 

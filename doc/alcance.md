@@ -2,6 +2,7 @@
 Documento abierto el 2026-08-31, el mismo día que el repositorio, en cuanto Víctor cerró las cuatro decisiones que quedaban abiertas en fuente.md.
 Existe para que el alcance esté escrito antes que el código y no se vaya reinterpretando cada vez que alguien toca la ETL. Sus decisiones van citadas literalmente y marcadas como suyas; lo que viene detrás de cada una es análisis nuestro y puede estar equivocado.
 Las tensiones del final no son objeciones: son puntos donde lo pedido y lo que hace falta para conseguirlo no coinciden del todo, y donde alguien tendrá que decidir. Se dejan escritas porque si no se olvidan.
+La tensión 1 se cerró el mismo día, cuando Víctor precisó que las altas de usados son importaciones y no rematriculaciones domésticas: se comprobó contra los datos por procedencia y por trámite antes de darla por buena, y la comprobación se dejó escrita porque es la que justifica que los usados cuenten en el parque.
 La tensión 3 se reescribió el mismo día: nació como «hace falta un catálogo externo para llegar a la medida del neumático» y Víctor la rebajó a clases gruesas de tamaño, con el argumento de que el desgaste lo marcan los kilómetros y no el tiempo. Lo que se sabía de la medida exacta no se borró, se movió detrás y se marcó como no necesario hoy: si el mapeo fino vuelve al alcance, está ahí y no hay que volver a investigarlo.
 -->
 
@@ -13,7 +14,7 @@ Dictadas por Víctor de Buen el 2026-08-31, en respuesta a las cuatro decisiones
 
 ***NOTA VBR***: *Todo el histórico de matriculaciones de vehículos nuevos de cualquier tipo al máximo nivel geográfico. Las bajas también son muy interesantes aunque no se puedan casar. Queremos formar agregados de parque móvil y ciclo de vida con mucho detalle. No nos interesa el titular para nada pero sí la ficha técnica porque afecta al tipo de neumáticos que necesitará. El mensual sustituye a los diarios sin contemplaciones.*
 
-De ahí se derivan cinco cosas:
+De ahí, y de una precisión suya posterior sobre los usados, se derivan seis cosas:
 
 | Decisión | Qué significa en la práctica |
 |---|---|
@@ -21,6 +22,7 @@ De ahí se derivan cinco cosas:
 | **De cualquier tipo** | No se filtra por `COD_TIPO` ni por `COD_CLASE_MAT`: entran turismos, furgonetas, camiones, autobuses, motocicletas, ciclomotores, remolques, semirremolques y vehículos especiales. |
 | **Al máximo nivel geográfico** | Se conservan `COD_MUNICIPIO_INE_VEH`, `MUNICIPIO`, `LOCALIDAD_VEHICULO` y `CODIGO_POSTAL`, además de las dos provincias. El código postal es el grano más fino que da la fuente. |
 | **Las bajas también** | Entra una segunda fuente, el fichero de bajas, con su propio histórico. Ver [fuente.md](fuente.md#las-otras-fuentes-de-la-dgt). |
+| **Y los usados también** | `IND_NUEVO_USADO` es dimensión, no filtro. Las altas de usados son importaciones que entran por primera vez en el parque español, no rematriculaciones de vehículos que ya estaban. Ver [la tensión 1](#1-los-usados-entran-son-importaciones-no-rematriculaciones). |
 | **El mensual manda** | Cargar el mensual de un periodo **borra y sustituye** lo que hubiera de ese periodo, venga de diarios o de una carga anterior. No hay reconciliación, no hay conservación de lo viejo. |
 
 Y dos cosas quedan fuera:
@@ -39,15 +41,24 @@ Es la decisión con más consecuencias técnicas, y todas van en la dirección d
 
 ## Tensiones que hay que resolver
 
-Tres puntos donde lo pedido y lo que hace falta para conseguirlo no coinciden del todo. No son objeciones al alcance: son avisos de que hay una decisión escondida.
+Tres puntos donde lo pedido y lo que hace falta para conseguirlo no coincidían del todo. No eran objeciones al alcance: eran avisos de que había una decisión escondida. **La 1 y la 3 las ha resuelto Víctor**, y se conservan con su resolución porque el porqué sigue haciendo falta para leer los agregados; **la 2 sigue esperando confirmación** y mientras tanto se trabaja como dice el propio apartado.
 
-### 1. «Vehículos nuevos» y «parque móvil» tiran en direcciones opuestas
+### 1. Los usados entran: son importaciones, no rematriculaciones
 
-`IND_NUEVO_USADO` vale `N` o `U`, y en la muestra del 2026-08-28 hay **9.630 nuevos y 856 usados**: un **8,1%** de las altas son vehículos usados, casi todos importaciones. Ese 8,1% **entra en el parque español** exactamente igual que un vehículo nuevo, y sus neumáticos se desgastan igual. Si el objetivo fuera sólo el mercado de vehículo nuevo, se filtra por `N`; si el objetivo es el parque y su ciclo de vida, filtrar por `N` deja fuera vehículos que están rodando.
+**Resuelta el 2026-08-31.** Nació como tensión porque «matriculaciones de vehículos nuevos» y «parque móvil» tiran en direcciones opuestas: `IND_NUEVO_USADO` vale `N` o `U`, y en la muestra del 2026-08-28 hay **9.630 nuevos y 856 usados**, un 8,1% de las altas. Filtrar por `N` habría dejado fuera vehículos que ruedan y gastan neumáticos.
 
-La salida que no obliga a elegir: **cargar el fichero íntegro y filtrar en la capa de agregados**, con `IND_NUEVO_USADO` como dimensión y no como filtro de carga. Así conviven una serie de matriculaciones de nuevos y un parque que incluye las importaciones de usados, sin volver a descargar nada. Es lo que se hace salvo instrucción contraria.
+***NOTA VBR***: *Me he liado con los usados, no son rematriculaciones domésticas sino importaciones, así que deben entrar también.*
 
-Y hay un aviso sobre el propio campo: el documento de la DGT dice que `IND_NUEVO_USADO` **«se calcula en el almacén de datos»**, no que venga del trámite. Un campo calculado por el emisor puede haber cambiado de criterio a lo largo de once años; conviene vigilar su serie temporal antes de fiarse de un salto.
+Los datos le dan la razón por dos caminos independientes:
+
+- **Por procedencia.** De los 856 usados, **835 (97,5%) constan como importación**: 790 de la U.E. (`COD_PROCEDENCIA_ITV` = 3) y 45 extracomunitaria (= 1). Sólo 21 figuran como fabricación nacional.
+- **Por trámite.** La rematriculación tiene clave propia, `CLAVE_TRAMITE` = 5, y ese día hubo **exactamente una** en todo el fichero. Los usados llegan por matriculación ordinaria (674), paso de temporal a definitiva (93) y matriculación temporal (88).
+
+O sea que un vehículo usado en este fichero es un vehículo que **entra por primera vez en el parque español**, no uno que ya estaba y cambia de papeles. Entra en los agregados igual que un nuevo, y `IND_NUEVO_USADO` se conserva como **dimensión**, no como filtro, para poder separar el mercado de vehículo nuevo cuando interese.
+
+Y de paso aparece un detalle que importa al contar: los **93 registros de «paso de matrícula temporal a definitiva» de ese día son todos usados**, y 88 de las 133 matriculaciones temporales también. O sea que el doble conteo del que avisa [fuente.md](fuente.md#qué-contiene-realmente) —trámite `9` y trámite `B` son el mismo vehículo dos veces— **está concentrado justo en el segmento de importación de usados**. Contar altas de usados sin resolver ese par infla precisamente el segmento que ahora entra en el alcance.
+
+Queda en pie un aviso sobre el propio campo: el documento de la DGT dice que `IND_NUEVO_USADO` **«se calcula en el almacén de datos»**, no que venga del trámite. Un campo calculado por el emisor puede haber cambiado de criterio a lo largo de once años; conviene vigilar su serie temporal antes de fiarse de un salto.
 
 ### 2. «El titular no interesa», pero el régimen de uso sí debería
 
