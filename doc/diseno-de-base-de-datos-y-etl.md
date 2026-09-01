@@ -423,6 +423,8 @@ COPY spain.staging_line (line) FROM STDIN
 
 Tres detalles que no son adorno:
 
+> **Cambiado al implementarlo, el 2026-09-01.** La recodificación la hace ahora **el guion al leer el ZIP**, no el `COPY`. El motivo es que el guion pasa a `psql` el script y los datos por el mismo flujo, y pedirle que lea una mitad como UTF-8 y la otra como LATIN1 es frágil. Lo que no cambia es el resultado: **todo queda almacenado en UTF-8**, que es la codificación de la base. Lo de abajo se conserva porque explica el mecanismo del servidor, que sigue siendo válido si algún día la carga entra por otra vía.
+
 - **`ENCODING 'LATIN1'` declara de qué codificación VIENE el fichero, no en cuál se guarda.** PostgreSQL lo lee como ISO-8859-1 y lo convierte a la codificación de la base, o sea a UTF-8, y esa opción manda sobre el `client_encoding` de la sesión sólo para ese `COPY`. Es la alternativa a recodificar en el cliente con un `iconv` o un `decode('latin-1')` en el guion, y se prefiere porque el guion no toca un byte y porque la conversión la hace el mismo componente que va a almacenar el resultado. Y como en la fuente cada carácter ocupa exactamente un byte, después de transcodificar **714 bytes son 714 caracteres**, y el troceado con `substr` cuenta caracteres sin ambigüedad.
 - **Si la fuente resultara ser CP1252 y no ISO-8859-1**, las dos son idénticas salvo en los bytes `0x80`-`0x9F`, donde CP1252 pone el euro, las comillas tipográficas y la raya larga. Declarar `LATIN1` los convertiría en caracteres de control invisibles en vez de en esos símbolos. Por eso la fase 0 mide si esos bytes aparecen en el histórico: si no aparecen, las dos declaraciones son equivalentes y se queda `LATIN1`, que acepta cualquier byte; si aparecen, se declara `WIN1252` y hay que comprobar que no vengan además los cinco bytes que CP1252 deja sin definir, porque con esa declaración abortarían la carga.
 - **`FORMAT csv` con un `QUOTE` que no puede aparecer** en el fichero, en lugar del formato `text`, para que una barra invertida en los datos se guarde como barra invertida y no como escape.
@@ -482,6 +484,27 @@ Contar filas, cuadrar contra las líneas del fichero, escribir la fila de `sourc
 **Python 3 de la biblioteca estándar para orquestar, `psql` para cargar.** Sin dependencias: `urllib` descarga, `zipfile` descomprime en memoria, `hashlib` calcula la huella y `subprocess` alimenta a `psql`, que ya resuelve la conexión con el entorno y el fichero de contraseñas. No hace falta `psycopg` —que además no está instalado en la máquina— porque **no se hace una sola consulta fila a fila**: todo son `COPY` e `INSERT ... SELECT`.
 
 Funciona igual en Windows y en Linux, que es requisito, porque no sale al sistema operativo para nada: no hay `unzip`, ni `iconv`, ni tuberías de utilidades Unix.
+
+## Cómo queda implementado
+
+Escrito el 2026-09-01, después de la fase 0. Cinco ficheros y ninguna dependencia que instalar:
+
+| Fichero | Qué hace |
+|---|---|
+| [schema/00-create-database.sql](../schema/00-create-database.sql) | La base, el esquema y los privilegios. Ya ejecutado. |
+| [schema/01-spain-schema.sql](../schema/01-spain-schema.sql) | Las tablas, los catálogos, las funciones de conversión, las particiones y las vistas de conteo, con un `COMMENT` en cada sitio donde un dato puede engañar |
+| [schema/02-size-rules.sql](../schema/02-size-rules.sql) | Las clases de tamaño y las reglas que las asignan, **aparte porque son lo que va a cambiar** |
+| [etl/download.py](../etl/download.py) | La descarga, con el manifiesto de huellas y el modo `--recent` de la tarea diaria |
+| [etl/load.py](../etl/load.py) | La carga: trocea, resuelve dimensiones e inserta, todo en una transacción por fichero |
+| [schema/checks.sql](../schema/checks.sql) | Las cifras que hay que mirar después de cargar, y contra qué compararlas |
+
+Tres decisiones de implementación que no estaban en el diseño y conviene saber:
+
+**Recargar un diario no es tirar una partición**, porque la partición es mensual y contiene los demás días. Se resuelve borrando por fecha de proceso, y eso se puede hacer porque está medido: **`FEC_PROCESO` es exactamente la fecha del fichero diario** en los tres diarios comprobados, en los 30.636 registros, sin una excepción.
+
+**Un cero en una medida física se guarda como nulo.** Los mensuales traen masa, batalla y vías a `0` en registros enteros, y eso no es un cero: es «no informado». Guardarlo como cero bajaría cualquier media sin decir una palabra. En los contadores —plazas, titulares, transmisiones— el cero sí es un cero y se guarda.
+
+**Un código que no está en el Anexo I se da de alta al vuelo**, con la descripción «no documentado en el Anexo I» y marcado como no documentado, en vez de rechazar la fila. `spain.checks` los lista.
 
 ## Fase 0: lo que había que medir antes de fijar el DDL
 
