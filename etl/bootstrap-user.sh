@@ -30,7 +30,13 @@ python3 "$REPO/etl/download.py" --recent 2
 step "3. La captura diaria"
 # The daily files are the only ones carrying the homologation password and the
 # DGT keeps them some twenty days: what is not downloaded on the day is lost.
-CRON_LINE="17 6 * * * /usr/bin/python3 $REPO/etl/download.py --recent 3 >> $LOGDIR/matveh-download.log 2>&1"
+#
+# The hours are measured, not guessed. Out of the 53 daily files whose
+# last-modified was captured on download, 43 were published at 06:30 UTC of the
+# day AFTER the data, and 10 at 13:00 UTC. Hence two passes, and --recent 4 to
+# pick up whatever a weekend delays: the median lag is +30.5 hours.
+CRON_LINE="0 7 * * * /usr/bin/python3 $REPO/etl/download.py --recent 4 >> $LOGDIR/matveh-download.log 2>&1
+0 14 * * * /usr/bin/python3 $REPO/etl/download.py --recent 4 >> $LOGDIR/matveh-download.log 2>&1"
 if crontab -l 2>/dev/null | grep -qF "$REPO/etl/download.py"; then
   echo "ya estaba en el crontab:"
   crontab -l | grep -F "$REPO/etl/download.py"

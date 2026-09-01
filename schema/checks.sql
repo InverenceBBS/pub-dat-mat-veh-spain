@@ -52,15 +52,22 @@ SELECT period, procedure_code, count(*)
 
 \echo ''
 \echo '=== 5. La contraseña de homologación: 0% en mensuales, 97,7% en diarios'
-SELECT f.granularity,
+-- One row per period, NOT one per file: a period loaded from dailies has 22 of
+-- them, and joining against source_file directly counted every event 22 times.
+WITH period_kind AS (
+  SELECT DISTINCT ON (period) period, granularity
+    FROM spain.source_file
+   WHERE kind = 'registration' AND NOT is_superseded
+   ORDER BY period, granularity            -- 'daily' < 'monthly', and a period
+)                                          -- with a monthly file has no dailies left
+SELECT k.granularity,
        count(*) FILTER (WHERE s.type_approval IS NOT NULL) AS con_contrasena,
        count(*) AS eventos,
        round(100.0 * count(*) FILTER (WHERE s.type_approval IS NOT NULL)
              / greatest(count(*), 1), 1) AS porcentaje
   FROM spain.registration r
   JOIN spain.vehicle_spec s USING (spec_pk)
-  JOIN spain.source_file f ON f.kind = 'registration' AND f.period = r.period
-                          AND NOT f.is_superseded
+  JOIN period_kind k USING (period)
  GROUP BY 1;
 
 \echo ''
