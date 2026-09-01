@@ -30,6 +30,12 @@ SET ROLE model_archive;
 
 BEGIN;
 
+-- The sheets already classified point at these classes, so they have to be
+-- unassigned before the catalogue can be rebuilt. It is an UPDATE over the
+-- DIMENSION, never over the events, and classify_size() at the end of this file
+-- puts every one of them back with the new thresholds.
+UPDATE spain.vehicle_spec SET size_class_code = NULL WHERE size_class_code IS NOT NULL;
+
 TRUNCATE spain.size_rule;
 DELETE FROM spain.size_class;
 
@@ -131,11 +137,18 @@ COMMENT ON FUNCTION spain.classify_size(boolean) IS
   'Run it after loading, and again whenever a threshold changes: it rewrites the '
   'dimension, never the twenty million events.';
 
+-- Reclassify right here: this file has just emptied size_class_code, so leaving
+-- without doing it would leave the dimension unclassified and every aggregate by
+-- size empty, with nothing saying why.
+\echo '--- reclasificando con los umbrales nuevos'
+SELECT spain.classify_size() AS fichas_clasificadas;
+
 COMMIT;
 
 RESET ROLE;
 
-\echo '--- las clases y cuántas reglas las alimentan'
-SELECT c.code, c.description, count(r.rule_pk) AS reglas
-  FROM spain.size_class c LEFT JOIN spain.size_rule r ON r.size_class_code = c.code
- GROUP BY 1, 2, c.sort_order ORDER BY c.sort_order;
+\echo '--- las clases, sus reglas y cuántas fichas han caído en cada una'
+SELECT c.code, c.description,
+       (SELECT count(*) FROM spain.size_rule r WHERE r.size_class_code = c.code) AS reglas,
+       (SELECT count(*) FROM spain.vehicle_spec s WHERE s.size_class_code = c.code) AS fichas
+  FROM spain.size_class c ORDER BY c.sort_order;
