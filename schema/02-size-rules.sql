@@ -15,6 +15,11 @@
 -- because SUVs are registered as cars. So a car's size is DERIVED here, out of
 -- wheelbase and mass, which have 100% coverage in the daily files.
 --
+-- The car thresholds were recalibrated on 2026-09-01 against the quantiles of
+-- 118.957 real cars, after the first attempt left 69% of them in one class. They
+-- are ABSOLUTE and stay absolute, so that the fleet getting heavier over the
+-- years shows up in the counts.
+--
 -- WHAT IS STILL WRONG WITH IT, said plainly: this separates cars by size, not
 -- SUVs from saloons. A long-wheelbase estate and an SUV land in the same class.
 -- Telling them apart needs ground clearance or body height, which the record
@@ -68,15 +73,29 @@ INSERT INTO spain.size_rule
   (120, 'TRUCK_L', '^0[0-9A-F]$',       NULL, 11999, NULL, NULL, 'camión de menos de 12 t'),
   (130, 'TRUCK_L', '^0[0-9A-F]$',       NULL, NULL, NULL, NULL, 'camión sin masa informada'),
 
-  -- And the cars, which is the part that has to be invented. Wheelbase first,
-  -- because it separates segments almost on its own; mass when there is none.
-  (200, 'CAR_S',   '^40$',              NULL, NULL, NULL, 2499, 'batalla por debajo de 2.500 mm'),
-  (210, 'CAR_M',   '^40$',              NULL, NULL, 2500, 2699, 'batalla de 2.500 a 2.699 mm'),
-  (220, 'CAR_L',   '^40$',              NULL, NULL, 2700, NULL, 'batalla de 2.700 mm o más'),
-  (230, 'CAR_S',   '^40$',              NULL, 1149, NULL, NULL, 'sin batalla: masa por debajo de 1.150 kg'),
-  (240, 'CAR_M',   '^40$',              1150, 1549, NULL, NULL, 'sin batalla: masa de 1.150 a 1.549 kg'),
-  (250, 'CAR_L',   '^40$',              1550, NULL, NULL, NULL, 'sin batalla: masa de 1.550 kg o más'),
-  (260, 'CAR_M',   '^40$',              NULL, NULL, NULL, NULL, 'turismo sin batalla ni masa: al centro, y se sabrá por el conteo');
+  -- And the cars, the part that has to be invented. MASS FIRST: measured over
+  -- the 118.957 cars of 2026-07, wheelbase runs from p10 = 2.551 to p90 = 2.840
+  -- mm, so a cut at 2.500 left ninety per cent of the fleet on one side. Mass
+  -- spreads properly: p10 = 1.198, p50 = 1.502, p90 = 1.991 kg. Wheelbase stays
+  -- as the fallback for the records that bring no mass.
+  --
+  -- THE THRESHOLDS ARE ABSOLUTE ON PURPOSE, and they will drag the counts over
+  -- the years: between 2014-12 and 2026-07 the median car went from 1.365 to
+  -- 1.502 kg, so the small class empties out as time passes. That drift is not a
+  -- defect of the classification, IT IS THE MEASUREMENT:
+  --
+  --   "Si los coches son más pequeños se necesiatrán menos neuméticos pequeños,
+  --    eso es lo que queremos medir precisamente"  -- Víctor, 2026-09-01
+  --
+  -- Cuts relative to each year would hide exactly that, because every year would
+  -- then have the same share of small cars by construction.
+  (200, 'CAR_S',   '^40$',               NULL, 1199, NULL, NULL, 'masa por debajo de 1.200 kg'),
+  (210, 'CAR_M',   '^40$',               1200, 1749, NULL, NULL, 'masa de 1.200 a 1.749 kg'),
+  (220, 'CAR_L',   '^40$',               1750, NULL, NULL, NULL, 'masa de 1.750 kg o más'),
+  (230, 'CAR_S',   '^40$',               NULL, NULL, NULL, 2549, 'sin masa: batalla por debajo de 2.550 mm'),
+  (240, 'CAR_M',   '^40$',               NULL, NULL, 2550, 2749, 'sin masa: batalla de 2.550 a 2.749 mm'),
+  (250, 'CAR_L',   '^40$',               NULL, NULL, 2750, NULL, 'sin masa: batalla de 2.750 mm o más'),
+  (260, 'CAR_M',   '^40$',               NULL, NULL, NULL, NULL, 'turismo sin masa ni batalla: al centro, y se sabrá por el conteo');
 
 -- Applies the rules to every sheet, or only to the unclassified ones.
 -- Returns how many it classified, because a silent UPDATE says nothing.
