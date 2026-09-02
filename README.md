@@ -13,7 +13,7 @@ Este repositorio **no contiene datos**. Contiene lo necesario para conseguirlos 
 
 ## Estado
 
-**Diseño propuesto y medido, sin implementar.** La ETL todavía no está escrita. Lo que hay es qué publica la DGT, cómo son los ficheros, qué se puede y qué no se puede hacer con ellos, qué se va a cargar, el diseño de la base de datos y las mediciones sobre ficheros reales que ese diseño necesitaba. Los guiones de medición, que no tocan ninguna base de datos, están en [phase0/](phase0/).
+**En producción.** El histórico completo está cargado —19.750.700 altas y 22.837.685 bajas, de 2014-12 a 2026-08— y una tarea horaria descarga, carga y clasifica lo que la DGT publica, sin intervención. Documentado: qué publica la DGT, cómo son los ficheros, qué se puede y qué no se puede hacer con ellos, qué se carga, el diseño de la base, las mediciones que ese diseño necesitaba y cómo se opera. El código está en [etl/](etl/) y [schema/](schema/); los guiones de medición, que no tocan ninguna base de datos, en [phase0/](phase0/).
 
 ## Documentación
 
@@ -26,6 +26,8 @@ Este repositorio **no contiene datos**. Contiene lo necesario para conseguirlos 
 | [doc/tablas-de-codigos.md](doc/tablas-de-codigos.md) | El Anexo I completo: clase de matrícula, procedencia, servicio, tipo de vehículo, propulsión, provincias, trámite, baja definitiva y categoría de vehículo eléctrico |
 | [doc/diseno-de-base-de-datos-y-etl.md](doc/diseno-de-base-de-datos-y-etl.md) | **Propuesta, sin implementar**: el esquema `spain` tabla por tabla, el destino de cada uno de los 69 campos, el particionado por mes, los seis pasos de la carga y lo que hay que medir antes de fijar el DDL |
 | [doc/fase0-resultados.md](doc/fase0-resultados.md) | Las diez mediciones sobre ficheros reales que había que hacer antes de fijar el esquema, con los cinco hallazgos que lo cambian |
+| [doc/operacion.md](doc/operacion.md) | Qué está corriendo, dónde, con qué credenciales, y las recetas para recargar un mes, cambiar las clases de tamaño o averiguar por qué algo ha fallado |
+| [doc/estadisticas.md](doc/estadisticas.md) | Las series mensuales de once años, con gráficos: entradas y salidas del parque, turismos por tamaño —el pequeño se hunde y el grande se multiplica—, propulsión y edad a la baja |
 
 ## Lo esencial en cinco líneas
 

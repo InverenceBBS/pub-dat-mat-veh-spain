@@ -359,6 +359,7 @@ Y el que queda a medir es `FEC_TRAMITACION`: el documento de la DGT dice que es 
 | `registration` | ~20 M | ~72 | ~1,4 GB |
 | `deregistration` | del orden de 20 M | ~76 | ~1,5 GB |
 | `vehicle_spec` | **por medir** | ~250 | de 15 MB a 250 MB |
+| *(medido el 2026-09-02, con el histórico cargado)* | 6.464.912 | — | **4.006 MB** |
 | `place` | ~60 mil estimadas | ~60 | ~4 MB |
 | catálogos | ~300 | — | despreciable |
 
@@ -497,12 +498,22 @@ Escrito el 2026-09-01, después de la fase 0. Cinco ficheros y ninguna dependenc
 | [etl/download.py](../etl/download.py) | La descarga, con el manifiesto de huellas y el modo `--recent` de la tarea diaria |
 | [etl/load.py](../etl/load.py) | La carga: trocea, resuelve dimensiones e inserta, todo en una transacción por fichero |
 | [schema/checks.sql](../schema/checks.sql) | Las cifras que hay que mirar después de cargar, y contra qué compararlas |
+| [etl/run-load.sh](../etl/run-load.sh) | La carga completa, **como `archive_rw` y sin privilegios** |
+| [etl/hourly.sh](../etl/hourly.sh) | El circuito de cada hora: preguntar, descargar, cargar, clasificar |
+| [etl/bootstrap-db.sh](../etl/bootstrap-db.sh) y [bootstrap-user.sh](../etl/bootstrap-user.sh) | El montaje en una máquina nueva, separado en lo que necesita privilegio y lo que no |
+| [schema/migrations/](../schema/migrations/) | Los cambios de esquema posteriores, que se ejecutan a mano y no rehaciendo el DDL |
+
+Y **cómo se opera** —qué corre, dónde están las trazas, cómo recargar un mes— está en [operacion.md](operacion.md).
 
 Tres decisiones de implementación que no estaban en el diseño y conviene saber:
 
 **Recargar un diario no es tirar una partición**, porque la partición es mensual y contiene los demás días. Se resuelve borrando por fecha de proceso, y eso se puede hacer porque está medido: **`FEC_PROCESO` es exactamente la fecha del fichero diario** en los tres diarios comprobados, en los 30.636 registros, sin una excepción.
 
 **Un cero en una medida física se guarda como nulo.** Los mensuales traen masa, batalla y vías a `0` en registros enteros, y eso no es un cero: es «no informado». Guardarlo como cero bajaría cualquier media sin decir una palabra. En los contadores —plazas, titulares, transmisiones— el cero sí es un cero y se guarda.
+
+**La ETL no necesita privilegios, y eso no es comodidad.** Corre como `archive_rw` con su contraseña en el fichero de contraseñas de quien la lanza; sólo el DDL es del propietario. Las dos operaciones que sí exigen ser dueño —crear la partición de un mes y vaciarla— están encapsuladas en `spain.ensure_partition` y `spain.reset_partition`, ambas `SECURITY DEFINER`. El motivo: **un proceso que pide `sudo` no se puede poner en un cron**, y la carga tenía que acabar en el cron.
+
+**Se pregunta cada hora en vez de adivinar el horario.** La DGT no publica ninguno, así que `download.py --check` hace `HEAD` primero —el `ETag` con cero bytes de cuerpo— y sólo descarga lo nuevo o lo que haya cambiado. Los GET condicionales no sirven: medido, ese servidor ignora `If-None-Match` y `If-Modified-Since` y devuelve el fichero entero. Además de barato, esto detecta **un fichero que la DGT reescriba**, que una descarga diaria no vería.
 
 **Un código que no está en el Anexo I se da de alta al vuelo**, con la descripción «no documentado en el Anexo I» y marcado como no documentado, en vez de rechazar la fila. `spain.checks` los lista.
 
