@@ -10,7 +10,7 @@ Las cardinalidades de vehicle_spec y de place son la única incógnita que puede
 
 Base **`matveh`**, esquema **`spain`**, en el servidor `45.159.223.206`. La base y el esquema ya están creados, con los roles y las credenciales del archivo de modelos; lo que se diseña aquí es **lo que va dentro**.
 
-Estado: **propuesta para revisar, con la fase 0 ya hecha**. Nada de esto está implementado.
+Estado: **implementado y en producción desde el 2026-09-02**. Lo que está corriendo, y cómo se opera, en [operacion.md](operacion.md); lo que se midió antes de construirlo, en [fase0-resultados.md](fase0-resultados.md). Este documento conserva el diseño y **el porqué de cada decisión**, que es lo que no se ve mirando el código.
 
 > **La fase 0 se ejecutó el 2026-09-01 y desmintió una de las hipótesis de este documento.** Los resultados están en [fase0-resultados.md](fase0-resultados.md), y la corrección que exigen, en [La corrección tras la fase 0](#la-corrección-tras-la-fase-0). Lo que sigue conserva el diseño original porque el razonamiento sigue haciendo falta para entender la corrección; donde algo ha quedado desmentido, se dice en su sitio.
 
@@ -125,7 +125,13 @@ Se podía prescindir de `vehicle_spec` por completo: llevar al evento los diecis
 
 ## Las tablas
 
-Esbozo, no DDL definitivo. Nombres en inglés, en singular, sin palabras clave de SQL, y los tipos elegidos para que **el orden de las columnas evite el relleno de alineación** de PostgreSQL: primero lo de 4 bytes, luego lo de 2, y al final lo de 1.
+**El DDL vigente es [schema/01-spain-schema.sql](../schema/01-spain-schema.sql)**, que es lo que hay ejecutado; lo que sigue reproduce sus tablas para poder explicarlas, y se mantiene igual a él. Nombres en inglés, en singular, sin palabras clave de SQL, y las columnas ordenadas para que **el orden evite el relleno de alineación** de PostgreSQL: primero lo de 4 bytes, luego lo de 2, y al final lo de 1.
+
+Dos cosas cambiaron al implementarlo, y conviene saber por qué:
+
+**Los códigos son `text` y no `char(n)`.** Un `text` corto ocupa lo mismo o menos —un byte de cabecera más el contenido— y `char(n)` rellena con espacios: la provincia de Asturias, que es `O`, se guardaría como `'O '`, con las sutilezas de comparación que eso arrastra. Es el mismo motivo por el que el archivo de modelos usa `text` con un `CHECK` en lugar de `char(64)` para sus huellas.
+
+**`procedure_code` admite nulo**, y no se supo hasta cargar: los dos registros de 707 caracteres de 2014-12 traen `CLAVE_TRAMITE` en blanco. Sus demás campos son buenos, así que se cargan, y las vistas de conteo los dejan fuera solas porque un nulo no casa con una lista `IN`.
 
 ```sql
 -- ── LOS EVENTOS ─────────────────────────────────────────────────────────────
@@ -141,11 +147,11 @@ CREATE TABLE spain.registration (
   process_date             date,                   -- FEC_PROCESO
   spec_pk                  integer     NOT NULL REFERENCES spain.vehicle_spec,
   place_pk                 integer              REFERENCES spain.place,
-  service_code             char(3)              REFERENCES spain.service,
-  plate_province_code      char(2)              REFERENCES spain.province,
-  procedure_code           "char"      NOT NULL REFERENCES spain.procedure_type,
-  plate_class_code         "char"               REFERENCES spain.plate_class,
-  origin_code              "char"               REFERENCES spain.origin,
+  service_code             text                 REFERENCES spain.service,
+  plate_province_code      text                 REFERENCES spain.province,
+  procedure_code           text                 REFERENCES spain.procedure_type,
+  plate_class_code         text                 REFERENCES spain.plate_class,
+  origin_code              text                 REFERENCES spain.origin,
   is_used                  boolean,
   is_renting               boolean,
   is_legal_person          boolean
@@ -159,10 +165,10 @@ CREATE TABLE spain.deregistration (
   process_date             date,
   spec_pk                  integer     NOT NULL REFERENCES spain.vehicle_spec,
   place_pk                 integer              REFERENCES spain.place,
-  service_code             char(3)              REFERENCES spain.service,
-  plate_province_code      char(2)              REFERENCES spain.province,
-  procedure_code           "char"      NOT NULL REFERENCES spain.procedure_type,
-  reason_code              "char"               REFERENCES spain.deregistration_reason,
+  service_code             text                 REFERENCES spain.service,
+  plate_province_code      text                 REFERENCES spain.province,
+  procedure_code           text                 REFERENCES spain.procedure_type,
+  reason_code              text                 REFERENCES spain.deregistration_reason,
   last_transfer_date       date,       -- FEC_TRAMITACION: la última transferencia.
                                        -- Vacía en el 96% de las altas y con fecha
                                        -- propia en el 60% de las bajas, así que
@@ -226,7 +232,7 @@ CREATE TABLE spain.vehicle_spec (
 -- ── LA GEOGRAFÍA ────────────────────────────────────────────────────────────
 -- Dos niveles para no repetir el nombre del municipio en cada combinación.
 CREATE TABLE spain.municipality (
-  municipality_pk  smallint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  municipality_pk  integer  GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   ine_code         char(5) NOT NULL UNIQUE,
   name             text    NOT NULL,
   province_code    char(2) REFERENCES spain.province
@@ -235,7 +241,7 @@ CREATE TABLE spain.municipality (
 CREATE TABLE spain.place (
   place_pk         integer  GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   place_hash       text     NOT NULL UNIQUE,
-  municipality_pk  smallint REFERENCES spain.municipality,
+  municipality_pk  integer  REFERENCES spain.municipality,
   province_code    char(2)  REFERENCES spain.province,   -- COD_PROVINCIA_VEH
   postal_code      char(5),
   locality         text
@@ -352,20 +358,19 @@ Y el que queda a medir es `FEC_TRAMITACION`: el documento de la DGT dice que es 
 
 **Nada de esto es irreversible.** Los ZIP originales se conservan, así que recuperar un campo descartado es añadir una columna y recargar, no volver a la DGT.
 
-## Cuánto va a ocupar (estimación, no medida)
+## Cuánto ocupa: lo estimado y lo que salió
 
-| Tabla | Filas | Bytes por fila | Total |
-|---|---:|---:|---:|
-| `registration` | ~20 M | ~72 | ~1,4 GB |
-| `deregistration` | del orden de 20 M | ~76 | ~1,5 GB |
-| `vehicle_spec` | **por medir** | ~250 | de 15 MB a 250 MB |
-| *(medido el 2026-09-02, con el histórico cargado)* | 6.464.912 | — | **4.006 MB** |
-| `place` | ~60 mil estimadas | ~60 | ~4 MB |
-| catálogos | ~300 | — | despreciable |
+| Tabla | Estimado al diseñar | **Medido el 2026-09-02, con el histórico cargado** |
+|---|---|---|
+| `registration` | ~20 M de filas, ~1,4 GB | 19.750.700 filas |
+| `deregistration` | del orden de 20 M, ~1,5 GB | 22.837.685 filas |
+| `vehicle_spec` | cardinalidad **por medir**, entre 15 y 250 MB | 6.464.912 filas y **4.006 MB** |
+| `place` | ~60 mil filas, ~4 MB | 250.121 filas, 66 MB |
+| `municipality` | — | 8.181 filas |
 
-Frente a los **13 GB de texto plano** de la fuente y a los 6-8 GB que estimaba [fuente.md](fuente.md#cuánto-pesa-medido-el-2026-08-31) para una tabla cruda con tipos ajustados. Los 72 bytes por fila son 24 de cabecera de fila de PostgreSQL más unos 44 de datos: **la cabecera pesa más de un tercio**, que es la señal de que apretar más los campos ya no cambia nada y de ahí el «cuando tenga sentido».
+**Donde más se falló fue en la dimensión, y por el motivo que la fase 0 destapó**: se estimó como un catálogo de modelos y resultó no saturar, así que hoy `vehicle_spec` **ocupa más que todas las particiones de eventos juntas**. La partida gorda son los textos finos —variante, versión y fabricante—, y ahí está el margen si algún día aprieta el disco.
 
-Las dos cifras que faltan son la cardinalidad de `vehicle_spec` y la de `place`, y son [la primera cosa que hay que medir](#fase-0-lo-que-hay-que-medir-antes-de-fijar-el-ddl).
+Lo que sí se cumplió es el orden de magnitud de los eventos y el argumento de fondo: la fila de evento son unos 72 bytes, de los que 24 son cabecera de PostgreSQL, así que apretar más los campos no cambiaría nada. Frente a los **13 GB de texto plano** de la fuente y a los 6-8 GB que estimaba [fuente.md](fuente.md#cuánto-pesa-medido-el-2026-08-31) para una tabla cruda.
 
 ## El particionado, y por qué por el mes del fichero
 

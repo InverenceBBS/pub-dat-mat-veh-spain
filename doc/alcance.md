@@ -28,6 +28,8 @@ De ahí, y de una precisión suya posterior sobre los usados, se derivan seis co
 Y dos cosas quedan fuera:
 
 - **El titular no interesa**: `PERSONA_FISICA_JURIDICA`, `NUM_TITULARES`, `COD_TUTELA` y `COD_POSESION` no alimentan ningún agregado. Se cargan igualmente porque el registro es de ancho fijo y descartarlos no ahorra trabajo, pero no se modelan.
+
+  **Corregido el 2026-09-01**, al decidir el esquema: la directriz de entonces fue «meter sólo los campos en los que estamos interesados», así que **`COD_TUTELA` y `COD_POSESION` no se cargan**; `PERSONA_FISICA_JURIDICA` sí, porque distingue empresa de particular y eso es régimen de uso; y `NUM_TITULARES` y `NUM_TRANSMISIONES` se cargan **sólo en las bajas**, donde cuentan por cuántas manos pasó el vehículo antes de morir. El detalle campo a campo, en [el destino de los 69 campos](diseno-de-base-de-datos-y-etl.md#el-destino-de-los-69-campos).
 - **Casar altas con bajas no se intenta**: es imposible sin el bastidor completo, y Víctor lo da por asumido («aunque no se puedan casar»). Los agregados de ciclo de vida se construyen sobre **distribuciones**, no sobre vehículos individuales seguidos en el tiempo.
 
 ## Qué implica «el mensual sustituye a los diarios sin contemplaciones»
@@ -41,7 +43,7 @@ Es la decisión con más consecuencias técnicas, y todas van en la dirección d
 
 ## Tensiones que hay que resolver
 
-Tres puntos donde lo pedido y lo que hace falta para conseguirlo no coincidían del todo. No eran objeciones al alcance: eran avisos de que había una decisión escondida. **La 1 y la 3 las ha resuelto Víctor**, y se conservan con su resolución porque el porqué sigue haciendo falta para leer los agregados; **la 2 sigue esperando confirmación** y mientras tanto se trabaja como dice el propio apartado.
+Tres puntos donde lo pedido y lo que hace falta para conseguirlo no coincidían del todo. No eran objeciones al alcance: eran avisos de que había una decisión escondida. **Las tres están resueltas**, y se conservan con su resolución porque el porqué sigue haciendo falta para leer los agregados: la 1 y la 3 las resolvió Víctor el 2026-08-31, y **la 2 quedó resuelta el 2026-09-01 al fijar el esquema**, conservando `RENTING`, `SERVICIO` y `PERSONA_FISICA_JURIDICA` como dimensiones.
 
 ### 1. Los usados entran: son importaciones, no rematriculaciones
 
@@ -64,7 +66,7 @@ Queda en pie un aviso sobre el propio campo: el documento de la DGT dice que `IN
 
 `RENTING` y `SERVICIO` **no son datos del titular**: dicen cómo se usa el vehículo. Y para lo que se persigue —desgaste y reposición de neumáticos— son de los campos más informativos del registro: un vehículo de renting o un taxi (`SERVICIO` = `A04`) recorre en un año lo que un particular en cuatro, y cambia neumáticos en esa proporción. Lo mismo `A01`/`A02` (alquiler), `A03` (autoescuela) o `B06` (agrícola).
 
-Se conservan y se modelan como dimensión. Si la intención era descartarlos también, hay que decirlo, porque entonces el ciclo de vida pierde su variable más explicativa.
+Se conservan y se modelan como dimensión. **Confirmado el 2026-09-01**: los tres están cargados —`is_renting`, `service_code` e `is_legal_person`— precisamente porque el ciclo de vida perdería sin ellos su variable más explicativa.
 
 ### 3. La ficha técnica no llega hasta el neumático
 

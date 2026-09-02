@@ -7,7 +7,7 @@ La medición 8 no se pudo hacer y se dice por qué en su sitio, en vez de dejarl
 
 # Fase 0: resultados
 
-Las diez mediciones que [el documento de diseño](diseno-de-base-de-datos-y-etl.md#fase-0-lo-que-hay-que-medir-antes-de-fijar-el-ddl) exigía antes de fijar el DDL, hechas el **2026-09-01** sobre ficheros reales. Nueve se hicieron; una no se puede hacer todavía y se explica por qué.
+Las diez mediciones que [el documento de diseño](diseno-de-base-de-datos-y-etl.md#fase-0-lo-que-había-que-medir-antes-de-fijar-el-ddl) exigía antes de fijar el DDL, hechas el **2026-09-01** sobre ficheros reales. Nueve se hicieron; la décima —el mensual contra la suma de sus diarios— **seguía sin poder hacerse el 2026-09-02**, porque depende de que la DGT publique el mensual de agosto, y se explica por qué en su sitio.
 
 **Ninguna toca la base de datos**: todo esto es contar sobre texto, con los guiones de [phase0/](../phase0/), que no necesitan credenciales ni PostgreSQL.
 
@@ -284,9 +284,9 @@ Producidas por [phase0/measure.py](../phase0/measure.py) sobre los nueve mensual
 
 ### 8. El mensual contra la suma de sus diarios: no medible hoy
 
-**No se puede hacer todavía, y no por falta de trabajo.** La comparación necesita un mes que tenga a la vez su fichero mensual y sus diarios, y hoy eso no existe: el mensual de agosto de 2026 aún no está publicado —la URL devuelve 404, y el de julio se publicó el 15 de agosto, así que el de agosto saldrá hacia mediados de septiembre— y de julio ya no quedan diarios, porque la DGT sólo mantiene los últimos veinte días.
+**No se pudo hacer el 2026-09-01, ni seguía siendo posible el 2026-09-02, y no por falta de trabajo.** La comparación necesita un mes que tenga a la vez su fichero mensual y sus diarios, y hoy eso no existe: el mensual de agosto de 2026 aún no está publicado —la URL devuelve 404, y el de julio se publicó el 15 de agosto, así que el de agosto saldrá hacia mediados de septiembre— y de julio ya no quedan diarios, porque la DGT sólo mantiene los últimos veinte días.
 
-Lo que sí se ha hecho es **guardar los 22 diarios de agosto que quedaban publicados**, con sus 126.404 altas. En cuanto salga el mensual de agosto la medición es inmediata. Si no se hubieran descargado hoy, esa comparación habría sido imposible para siempre.
+Lo que sí se ha hecho es **guardar los 22 diarios de agosto que quedaban publicados**, con sus 126.404 altas, y los 31 de bajas. En cuanto salga el mensual de agosto —hacia el 15 de septiembre, según cuándo se publicó el de julio— la medición es inmediata y ya no depende de nadie. Si no se hubieran descargado el 2026-09-01, esa comparación habría sido imposible para siempre.
 
 ### 9. Bytes 0x80-0x9F (donde ISO-8859-1 y CP1252 difieren)
 

@@ -61,7 +61,7 @@ Extrapolando esa media a los 139 meses publicados:
 
 - **≈ 1,8 GB** de descarga comprimida,
 - **≈ 13 GB** de texto plano,
-- **≈ 20 millones de registros** (unos 1,7 millones al año).
+- **≈ 20 millones de registros** (unos 1,7 millones al año). **Confirmado al cargarlo el 2026-09-02**: 19.750.700 registros de alta y 22.837.685 de baja, o sea que las bajas son más numerosas que las altas en la serie completa.
 
 Es un volumen cómodo para una única tabla de PostgreSQL, aun sin trucos: con los tipos ajustados (fechas como `date`, códigos como `char`, los textos largos casi todos vacíos) la tabla cruda queda en el orden de 6-8 GB más índices. La mayor parte del ancho se la llevan los campos de texto descriptivos —`FABRICANTE_ITV` son 70 caracteres, `FABRICANTE_VEHICULO_BASE` 50, marca y modelo 30 y 22—, así que normalizarlos a catálogos baja el tamaño de forma apreciable.
 

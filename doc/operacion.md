@@ -46,6 +46,8 @@ Por qué cada hora y no a una hora fija: **la DGT no publica ningún horario**. 
 | `place` | 250.121 |
 | `municipality` | 8.181 |
 
+Ojo al comparar esas cifras con las de [estadisticas.md](estadisticas.md), que dan 19.599.679 entradas y 12.389.335 salidas: **aquí están las filas de las tablas y allí los conteos de las vistas**. La diferencia son las bajas temporales, que no sacan al vehículo del parque, y los pasos de matrícula temporal a definitiva, que ya contaron al sacar la temporal.
+
 Y una cosa que conviene saber antes de dimensionar cualquier cosa: **`vehicle_spec` ocupa 4 GB, más que todas las particiones de eventos juntas**. Es la consecuencia directa del hallazgo 1 de la fase 0 —la ficha técnica no satura—, y la partida más gorda son los textos finos: variante, versión y fabricante. Si algún día aprieta, ahí está el margen.
 
 ## Las credenciales, y por qué la carga no necesita `sudo`
