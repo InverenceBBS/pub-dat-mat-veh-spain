@@ -5,7 +5,11 @@ Pendiente de decidir con Víctor: la licencia del repositorio y el idioma de la 
 
 # Microdatos de matriculaciones y bajas de vehículos en España
 
-Descarga, documentación y carga en PostgreSQL de los **microdatos de matriculaciones y de bajas de vehículos** que publica en abierto la [Dirección General de Tráfico](https://www.dgt.es/menusecundario/dgt-en-cifras/dgt-en-cifras-resultados/dgt-en-cifras-detalle/Microdatos-de-Matriculaciones-de-Vehiculos-diarios/): un registro por trámite, con la ficha técnica del vehículo y el municipio de domicilio del titular, desde diciembre de 2014 y con actualización diaria.
+Descarga, documentación y carga en PostgreSQL de los **microdatos de matriculaciones y de bajas de vehículos** que publica en abierto la [Dirección General de Tráfico](https://www.dgt.es/menusecundario/dgt-en-cifras/dgt-en-cifras-resultados/dgt-en-cifras-detalle/Microdatos-de-Matriculaciones-de-Vehiculos-diarios/). 
+
+Recoge los microdatos que publica en abierto la Dirección General de Tráfico: un registro por trámite, con la ficha técnica del vehículo y el municipio de su domicilio, desde diciembre de 2014 y con actualización diaria. Contiene 19,7 millones de altas y 22,8 millones de bajas —140 meses completos—, con el grano máximo que da la fuente: día del trámite, municipio y código postal, tipo de vehículo, masas y dimensiones, propulsión y nivel de emisiones.
+
+Sobre esos datos se ha construido una clasificación propia por tamaño de vehículo —turismo pequeño, mediano y grande, todoterreno, furgoneta, camión ligero y pesado, moto— que es la que permite estimar demanda de neumáticos por zona y por segmento. La base se actualiza sola: cada hora comprueba si la DGT ha publicado algo nuevo y lo carga.
 
 El objetivo es construir con ellos **agregados de parque móvil y de ciclo de vida del vehículo**, con el máximo detalle geográfico y técnico que la fuente permita.
 
