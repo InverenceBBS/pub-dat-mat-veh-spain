@@ -48,6 +48,14 @@ Los conteos son de las vistas `spain.park_entry` y `spain.park_exit`, o sea que 
 
 **Las bajas ordinarias son notablemente estables**: entre 772.000 y 1.044.000 al año, con una media de 889.000 en 2015-2025. Ésa es la serie que se puede usar para cualquier cosa; las otras dos columnas son actos administrativos y hay que tratarlas como tales.
 
+### Edad del vehículo al salir del parque
+
+![Edad del vehículo al salir del parque](img/edad-a-la-baja.png)
+
+Mediana mensual de los años transcurridos entre la matriculación y la baja definitiva. Está calculada con `registration_date`, que viene en el 100 % de los registros, y **no** con `FEC_PRIM_MATRICULACION`, que la DGT rellena sólo en el 4-13 % de los casos y que habría dado una serie construida sobre una decimoparte de los datos.
+
+Es la primera aproximación al ciclo de vida que permite esta fuente, con la limitación de fondo que ya está documentada: **no se puede seguir un vehículo entre ficheros**, porque el bastidor viene truncado, así que esto es una distribución de edades a la baja, no el seguimiento de una cohorte.
+
 ### La depuración de 2024, que no es mercado
 
 El pico de **763.000 salidas en febrero de 2024** es una depuración del registro, y se puede demostrar sin salir de los datos:
@@ -126,14 +134,6 @@ El **todo terreno son sólo el 2 %**, y eso no significa que se vendan pocos SUV
 ![Altas por tipo de propulsión](img/propulsion.png)
 
 El híbrido no enchufable no sale del campo de propulsión —que en esos vehículos dice gasolina— sino de `CATEGORIA_VEHICULO_ELECTRICO`, que es donde la DGT lo distingue.
-
-## Edad del vehículo al salir del parque
-
-![Edad del vehículo al salir del parque](img/edad-a-la-baja.png)
-
-Mediana mensual de los años transcurridos entre la matriculación y la baja definitiva. Está calculada con `registration_date`, que viene en el 100 % de los registros, y **no** con `FEC_PRIM_MATRICULACION`, que la DGT rellena sólo en el 4-13 % de los casos y que habría dado una serie construida sobre una decimoparte de los datos.
-
-Es la primera aproximación al ciclo de vida que permite esta fuente, con la limitación de fondo que ya está documentada: **no se puede seguir un vehículo entre ficheros**, porque el bastidor viene truncado, así que esto es una distribución de edades a la baja, no el seguimiento de una cohorte.
 
 ## Las provincias, con el aviso de arriba puesto
 
