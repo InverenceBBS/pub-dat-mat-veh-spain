@@ -45,7 +45,7 @@ step "3. La captura diaria"
 # The third line watches the hour itself. Losing files is already covered -- two
 # passes and --recent 4 tolerate the DGT moving by up to four days -- but nothing
 # would TELL US that it moved, and there is no published schedule to rely on.
-CRON_LINE="7 * * * * /usr/bin/python3 $REPO/etl/download.py --check 4 >> $LOGDIR/matveh-download.log 2>&1
+CRON_LINE="7 * * * * /bin/bash $REPO/etl/hourly.sh >> $LOGDIR/matveh-hourly.log 2>&1
 30 7 * * 1 /usr/bin/python3 $REPO/phase0/publication-hours.py --watch >> $LOGDIR/matveh-horario.log 2>&1"
 if crontab -l 2>/dev/null | grep -qF "$REPO/etl/download.py"; then
   echo "ya estaba en el crontab:"
