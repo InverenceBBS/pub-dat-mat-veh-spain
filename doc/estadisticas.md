@@ -22,7 +22,7 @@ Los conteos son de las vistas `spain.park_entry` y `spain.park_exit`, o sea que 
 
 **La geografía es el domicilio del vehículo, no dónde se vendió ni dónde rueda.** Madrid concentra el **31,8 %** de todas las altas de once años, y eso no es consumo madrileño: es dónde tienen su domicilio social las empresas de renting y de alquiler. Cualquier reparto provincial de este documento hay que leerlo así.
 
-**No hay nada por marca ni por modelo, y es deliberado.** Esos campos son texto libre y sucio —1.491 grafías de marca en un solo mes, con el mismo coche escrito de once maneras—, así que un agregado por marca no es publicable hasta que se normalice. Lo que sí es sólido es todo lo que sale de los códigos y de las medidas físicas, que es lo que hay aquí.
+**No hay nada por marca ni por modelo, y es deliberado.** Esos campos sí están en la base de datos pero son texto libre y sucio —1.491 grafías de marca en un solo mes, con el mismo coche escrito de once maneras—, así que un agregado por marca no es publicable hasta que se normalice. Lo que sí es sólido es todo lo que sale de los códigos y de las medidas físicas, que es lo que hay aquí. Más adelante se podría buscar un método de normalización vía LLM.
 
 ## Entradas y salidas del parque
 
