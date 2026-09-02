@@ -440,6 +440,10 @@ def main(argv):
         paths = argv
     for path in paths:
         load_file(path, fields, manifest)
+    if paths:
+        # Otherwise the staging table keeps the last file loaded -- 165 MB of a
+        # monthly one -- lying around until the next load needs it.
+        psql('TRUNCATE spain.staging_line;')
     return 0
 
 
