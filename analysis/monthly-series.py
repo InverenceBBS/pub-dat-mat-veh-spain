@@ -122,14 +122,23 @@ def main(argv):
     # ── 1. In and out of the fleet ──────────────────────────────────────────
     entries = dict(query("SELECT period::text, count(*)::text FROM spain.park_entry "
                          "GROUP BY period ORDER BY period"))
-    exits = dict(query("SELECT period::text, count(*)::text FROM spain.park_exit "
-                       "GROUP BY period ORDER BY period"))
+    # Exits split in three, because they are NOT the same thing and adding them
+    # up produces a chart that lies. In 2024-02 the DGT wrote off 694.219
+    # vehicles under reason 4, 'otros motivos', with a mean age of 50 years:
+    # those left the register, not the road. The same goes for the 199.177
+    # written off ex officio in 2025-12.
+    exits = query(
+        "SELECT period::text, "
+        "       CASE WHEN reason_code = '4' THEN 'Depuración del registro' "
+        "            WHEN reason_code IN ('A','B') THEN 'Bajas de oficio' "
+        "            ELSE 'Bajas ordinarias' END, count(*)::text "
+        "  FROM spain.park_exit GROUP BY 1, 2 ORDER BY 1")
     line_chart('altas-bajas.png',
                'Entradas y salidas del parque de vehículos',
-               'Altas de matriculación y bajas definitivas. Las bajas temporales no cuentan: el vehículo vuelve.',
+               'Las salidas van separadas: una depuración del registro no es un vehículo que deja de rodar. Las bajas temporales no cuentan, porque el vehículo vuelve.',
                months,
-               [('Entradas', [int(entries.get(m, 0)) for m in months]),
-                ('Salidas', [int(exits.get(m, 0)) for m in months])])
+               [('Entradas', [int(entries.get(m, 0)) for m in months])]
+               + [(k, v) for k, v in pivot(exits, months)])
 
     # ── 2 and 3. By size class: cars apart from everything else ─────────────
     by_class = query(

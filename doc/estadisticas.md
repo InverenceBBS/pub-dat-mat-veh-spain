@@ -8,7 +8,7 @@ Lo que NO se pone: nada por marca ni por modelo, porque el texto está sucio y n
 
 # Estadísticas y series mensuales
 
-Lo que dicen los datos cargados, medido el **2026-09-02** sobre **19.599.679 entradas** y **12.389.335 salidas** del parque, de diciembre de 2014 a agosto de 2026.
+Lo que dicen los datos cargados, medido el **2026-09-02** sobre **19.599.679 entradas** y **12.389.335 salidas** del parque, de diciembre de 2014 a agosto de 2026. De esas salidas, **1.042.271 no son vehículos que dejaron de rodar sino depuraciones del registro**, y por eso van siempre por separado: [ver más abajo](#la-depuración-de-2024-que-no-es-mercado).
 
 Todo esto se regenera con un comando, así que las cifras y los gráficos no se editan a mano:
 
@@ -28,23 +28,60 @@ Los conteos son de las vistas `spain.park_entry` y `spain.park_exit`, o sea que 
 
 ![Entradas y salidas del parque](img/altas-bajas.png)
 
-| Año | Entradas | Salidas | Saldo |
-|---|---:|---:|---:|
-| 2014 *(sólo diciembre)* | 99.421 | 136.489 | −37.068 |
-| 2015 | 1.445.217 | 966.836 | +478.381 |
-| 2016 | 1.685.210 | 890.470 | +794.740 |
-| 2017 | 1.807.444 | 885.376 | +922.068 |
-| 2018 | 1.936.058 | 1.038.292 | +897.766 |
-| 2019 | 1.891.278 | 1.092.649 | +798.629 |
-| 2020 | 1.373.847 | 975.305 | +398.542 |
-| 2021 | 1.422.027 | 988.535 | +433.492 |
-| 2022 | 1.367.284 | 855.175 | +512.109 |
-| 2023 | 1.556.699 | 1.181.397 | +375.302 |
-| 2024 | 1.699.418 | 1.582.617 | +116.801 |
-| 2025 | 1.923.845 | 1.177.693 | +746.152 |
-| 2026 *(hasta agosto)* | 1.391.931 | 618.501 | +773.430 |
+**Las salidas van separadas en tres, y no es un adorno: sumarlas produce un gráfico que miente.** De los 12.389.335 registros de baja definitiva, **1.042.271 —el 8,4 %— no son vehículos que dejaron de rodar, sino asientos administrativos**.
 
-Tres cosas se leen aquí. **El parque crece todos los años menos el primer mes**, con un saldo acumulado de 7,2 millones de vehículos en once años y ocho meses. **2020 se hunde**: las altas caen un 27 % respecto a 2019, y no se recuperan hasta 2025. Y **2024 es el año de las bajas**, con 1,58 millones, un 34 % más que el año anterior; el saldo de ese año es el más flojo de la serie.
+| Año | Entradas | Bajas ordinarias | Depuración del registro | De oficio |
+|---|---:|---:|---:|---:|
+| 2014 *(sólo diciembre)* | 99.421 | 132.233 | 0 | 4.256 |
+| 2015 | 1.445.217 | 932.252 | 0 | 34.584 |
+| 2016 | 1.685.210 | 853.753 | 128 | 36.589 |
+| 2017 | 1.807.444 | 845.187 | 23 | 40.166 |
+| 2018 | 1.936.058 | 994.388 | 25 | 43.879 |
+| 2019 | 1.891.278 | 1.043.806 | 7 | 48.836 |
+| 2020 | 1.373.847 | 930.193 | 6 | 45.106 |
+| 2021 | 1.422.027 | 935.588 | 9 | 52.938 |
+| 2022 | 1.367.284 | 795.974 | 7 | 59.194 |
+| 2023 | 1.556.699 | 772.103 | **321.779** | 87.515 |
+| 2024 | 1.699.418 | 803.335 | **694.304** | 84.978 |
+| 2025 | 1.923.845 | 876.719 | 25.184 | **275.790** |
+| 2026 *(hasta agosto)* | 1.391.931 | 503.884 | 799 | 113.818 |
+
+**Las bajas ordinarias son notablemente estables**: entre 772.000 y 1.044.000 al año, con una media de 889.000 en 2015-2025. Ésa es la serie que se puede usar para cualquier cosa; las otras dos columnas son actos administrativos y hay que tratarlas como tales.
+
+### La depuración de 2024, que no es mercado
+
+El pico de **763.000 salidas en febrero de 2024** es una depuración del registro, y se puede demostrar sin salir de los datos:
+
+- El fichero de la DGT de ese mes pesa **52,6 MB con 826.154 registros**, seis veces uno normal, así que el pico está en origen y no en nuestra carga.
+- **694.219 de esas bajas llevan el motivo `4`, «Otros motivos»**, cuando en enero del mismo año hubo **cero** de ese motivo y todo lo demás siguió en su nivel habitual: 48.588 voluntarias contra 44.186 el mes anterior, 66.011 temporales contra 67.353.
+- Y sobre todo, **la edad de esos vehículos**: 334.397 se matricularon en los años 70 y 130.893 en los 60, con una edad media de **50 años**; hay 130 de la década de 1920 y cinco de 1900. No dejaron de circular en 2024: **dejaron de constar**.
+
+La operación no fue puntual, sino una campaña: 321.779 bajas del mismo motivo en 2023 —repartidas en julio, septiembre y diciembre—, las 694.304 de 2024 y unas pocas más en 2025. Y en **diciembre de 2025** hay otra distinta: **199.177 bajas «de oficio por abandono»** en un mes, contra 7.208 el mes anterior; de ahí que las de oficio de 2025 tripliquen las de cualquier año previo.
+
+**Lo que esto demuestra, y es la conclusión útil**: el registro contaba como vivos casi 700.000 vehículos que llevaban medio siglo parados. Confirma con números lo que [fuente.md](fuente.md#limitaciones-que-condicionan-cualquier-uso) ya advertía —**esto es un fichero de eventos, no un censo del parque**— y quita valor a cualquier «parque circulante» calculado como altas menos bajas: ni la cifra de antes de la depuración ni la de después son el parque real.
+
+### Diciembre, un 60 % por encima, y es fiscal
+
+Medida la estacionalidad de las bajas **ordinarias** entre 2015 y 2025, sin depuraciones ni bajas de oficio, el patrón es inequívoco:
+
+| Mes | Media mensual | Desviación |
+|---|---:|---:|
+| enero | 60.812 | −17 % |
+| febrero | 68.683 | −6 % |
+| marzo | 76.329 | +4 % |
+| abril | 61.328 | −16 % |
+| mayo | 70.736 | −4 % |
+| junio | 74.145 | +1 % |
+| julio | 73.671 | 0 % |
+| agosto | 60.811 | −17 % |
+| septiembre | 71.192 | −3 % |
+| octubre | 75.551 | +3 % |
+| noviembre | 78.394 | +7 % |
+| **diciembre** | **117.735** | **+60 %** |
+
+Diciembre es el máximo con diferencia y enero el mínimo, y el salto entre los dos meses consecutivos es de un factor de casi dos. **La interpretación es nuestra, no un dato de la fuente**: el impuesto de vehículos de tracción mecánica se devenga el 1 de enero, así que quien no va a usar el vehículo tiene un mes de plazo para darlo de baja y no pagarlo. Encaja también con el mínimo de abril y agosto, que son los meses en los que nadie hace papeleo.
+
+Para cualquier serie que se publique, esto significa que **las bajas necesitan desestacionalización y las altas otra distinta**, porque sus estacionalidades no tienen el mismo origen.
 
 ## Turismos por tamaño: el mercado engorda
 

@@ -102,6 +102,8 @@ Los campos se agrupan así:
 
 **Los campos que se han ido añadiendo no están rellenos hacia atrás.** El diseño de registro es el de hoy, pero el histórico arranca en 2014-12: los campos de vehículo eléctrico, consumo, autonomía o vehículo base no pueden existir en los primeros años con la misma cobertura. Cuánto y desde cuándo hay que **medirlo** al cargar, no suponerlo.
 
+**Las bajas incluyen depuraciones administrativas masivas, y no vienen marcadas como tales.** Medido: en febrero de 2024 la DGT dio de baja **694.219 vehículos con el motivo `4`, «Otros motivos»**, con una edad media de 50 años —la mayoría matriculados en los años 60 y 70—, y en diciembre de 2025 otros 199.177 «de oficio por abandono». Son asientos del registro, no vehículos que dejan de circular, y suman el 8,4 % de todas las bajas de la serie. Quien sume bajas sin separar por motivo estará contando como desaparecidos en 2024 vehículos que dejaron de rodar en los ochenta. El detalle, con las cifras y la campaña completa, en [estadisticas.md](estadisticas.md#la-depuración-de-2024-que-no-es-mercado).
+
 **Y la geografía es la del domicilio, no la del punto de venta.** `COD_PROVINCIA_VEH` es donde está domiciliado el vehículo y `COD_PROVINCIA_MAT` donde se matriculó; ninguno de los dos es dónde se vendió. En las flotas de renting y en las empresas de alquiler la divergencia es grande y sistemática, no ruido.
 
 ## Las otras fuentes de la DGT
